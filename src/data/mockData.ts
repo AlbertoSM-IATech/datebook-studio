@@ -1,0 +1,215 @@
+import { EditorialEvent, Book, DEFAULT_TAGS } from '@/types/calendar';
+import { addDays, subDays, startOfDay, addHours } from 'date-fns';
+
+// Mock Books
+export const MOCK_BOOKS: Book[] = [
+  { id: 'book-1', title: 'El Último Verano' },
+  { id: 'book-2', title: 'Secretos del Mar' },
+  { id: 'book-3', title: 'Amor en París' },
+  { id: 'book-4', title: 'El Detective' },
+  { id: 'book-5', title: 'Mundos Paralelos' },
+  { id: 'book-6', title: 'La Herencia' },
+  { id: 'book-7', title: 'Noches de Luna' },
+  { id: 'book-8', title: 'El Jardín Secreto' },
+];
+
+// Generate mock events
+const today = startOfDay(new Date());
+
+export const MOCK_EVENTS: EditorialEvent[] = [
+  // User events
+  {
+    id: 'evt-1',
+    type: 'user',
+    title: 'Lanzamiento "El Último Verano"',
+    status: 'in_progress',
+    priority: 'high',
+    startAt: addDays(today, 5),
+    endAt: addDays(today, 5),
+    allDay: true,
+    marketplace: ['ES', 'MX'],
+    bookIds: ['book-1'],
+    tags: [DEFAULT_TAGS[0]], // Lanzamiento
+    description: 'Lanzamiento oficial del libro en mercados hispanohablantes. Coordinar con equipo de marketing.',
+    checklistItems: [
+      { id: 'cl-1', text: 'Preparar portada final', done: true, section: 'Pre-lanzamiento' },
+      { id: 'cl-2', text: 'Configurar preventa', done: true, section: 'Pre-lanzamiento' },
+      { id: 'cl-3', text: 'Enviar ARC a reviewers', done: true, section: 'Pre-lanzamiento' },
+      { id: 'cl-4', text: 'Publicar en Amazon KDP', done: false, section: 'Lanzamiento' },
+      { id: 'cl-5', text: 'Activar ads Facebook', done: false, section: 'Lanzamiento' },
+      { id: 'cl-6', text: 'Newsletter lanzamiento', done: false, section: 'Post-lanzamiento' },
+    ],
+    reminders: [
+      { id: 'rem-1', offsetMinutes: 10080, channel: 'in_app', enabled: true },
+      { id: 'rem-2', offsetMinutes: 1440, channel: 'in_app', enabled: true },
+    ],
+    createdAt: subDays(today, 30),
+    updatedAt: subDays(today, 2),
+  },
+  {
+    id: 'evt-2',
+    type: 'user',
+    title: 'Promoción Flash - 50% descuento',
+    status: 'pending',
+    priority: 'medium',
+    startAt: addDays(today, 12),
+    endAt: addDays(today, 14),
+    allDay: true,
+    marketplace: ['US', 'UK', 'CA', 'AU'],
+    bookIds: ['book-2', 'book-3', 'book-4'],
+    tags: [DEFAULT_TAGS[1]], // Promoción
+    description: 'Promoción de fin de semana. 3 días de descuento del 50% en mercados de habla inglesa.',
+    checklistItems: [
+      { id: 'cl-1', text: 'Programar cambio de precio', done: false },
+      { id: 'cl-2', text: 'Crear gráficos promocionales', done: false },
+      { id: 'cl-3', text: 'Preparar newsletter', done: false },
+    ],
+    reminders: [
+      { id: 'rem-1', offsetMinutes: 2880, channel: 'in_app', enabled: true },
+    ],
+    createdAt: subDays(today, 7),
+    updatedAt: subDays(today, 1),
+  },
+  {
+    id: 'evt-3',
+    type: 'user',
+    title: 'Entrega manuscrito "Noches de Luna"',
+    status: 'review',
+    priority: 'urgent',
+    startAt: addDays(today, 2),
+    endAt: addDays(today, 2),
+    allDay: false,
+    bookIds: ['book-7'],
+    tags: [DEFAULT_TAGS[4]], // Deadline
+    description: 'Fecha límite para entrega del manuscrito final al editor.',
+    checklistItems: [
+      { id: 'cl-1', text: 'Revisión final de gramática', done: true },
+      { id: 'cl-2', text: 'Verificar formato', done: true },
+      { id: 'cl-3', text: 'Añadir agradecimientos', done: false },
+      { id: 'cl-4', text: 'Enviar a editor', done: false },
+    ],
+    reminders: [
+      { id: 'rem-1', offsetMinutes: 1440, channel: 'in_app', enabled: true },
+      { id: 'rem-2', offsetMinutes: 120, channel: 'in_app', enabled: true },
+    ],
+    createdAt: subDays(today, 60),
+    updatedAt: today,
+  },
+  {
+    id: 'evt-4',
+    type: 'user',
+    title: 'Reunión con diseñadora de portadas',
+    status: 'pending',
+    priority: 'low',
+    startAt: addHours(addDays(today, 7), 10),
+    endAt: addHours(addDays(today, 7), 11),
+    allDay: false,
+    bookIds: ['book-5'],
+    tags: [DEFAULT_TAGS[5]], // Reunión
+    description: 'Revisión de borradores de portada para "Mundos Paralelos"',
+    checklistItems: [
+      { id: 'cl-1', text: 'Preparar referencias visuales', done: false },
+      { id: 'cl-2', text: 'Listar requisitos', done: false },
+    ],
+    reminders: [
+      { id: 'rem-1', offsetMinutes: 60, channel: 'in_app', enabled: true },
+    ],
+    createdAt: subDays(today, 3),
+    updatedAt: subDays(today, 1),
+  },
+  {
+    id: 'evt-5',
+    type: 'user',
+    title: 'Campaña AMS - Serie Misterio',
+    status: 'done',
+    priority: 'medium',
+    startAt: subDays(today, 5),
+    endAt: subDays(today, 1),
+    allDay: true,
+    marketplace: ['US'],
+    bookIds: ['book-4'],
+    tags: [DEFAULT_TAGS[2]], // Marketing
+    description: 'Campaña de Amazon Ads para la serie de misterio',
+    checklistItems: [
+      { id: 'cl-1', text: 'Crear campaña', done: true },
+      { id: 'cl-2', text: 'Configurar keywords', done: true },
+      { id: 'cl-3', text: 'Monitorizar primeros días', done: true },
+      { id: 'cl-4', text: 'Optimizar bids', done: true },
+    ],
+    reminders: [],
+    createdAt: subDays(today, 20),
+    updatedAt: subDays(today, 1),
+  },
+  {
+    id: 'evt-6',
+    type: 'user',
+    title: 'Publicar nuevo capítulo blog',
+    status: 'pending',
+    priority: 'low',
+    startAt: addDays(today, 3),
+    endAt: addDays(today, 3),
+    allDay: true,
+    bookIds: [],
+    tags: [DEFAULT_TAGS[3]], // Contenido
+    description: 'Escribir y publicar artículo sobre técnicas de escritura',
+    checklistItems: [
+      { id: 'cl-1', text: 'Escribir borrador', done: false },
+      { id: 'cl-2', text: 'Añadir imágenes', done: false },
+      { id: 'cl-3', text: 'SEO optimization', done: false },
+      { id: 'cl-4', text: 'Publicar', done: false },
+    ],
+    reminders: [
+      { id: 'rem-1', offsetMinutes: 1440, channel: 'in_app', enabled: true },
+    ],
+    createdAt: subDays(today, 2),
+    updatedAt: subDays(today, 1),
+  },
+  // Past events
+  {
+    id: 'evt-7',
+    type: 'user',
+    title: 'Lanzamiento "Secretos del Mar"',
+    status: 'done',
+    priority: 'high',
+    startAt: subDays(today, 15),
+    endAt: subDays(today, 15),
+    allDay: true,
+    marketplace: ['ES', 'MX', 'US'],
+    bookIds: ['book-2'],
+    tags: [DEFAULT_TAGS[0]], // Lanzamiento
+    description: 'Lanzamiento completado exitosamente',
+    checklistItems: [
+      { id: 'cl-1', text: 'Publicar en todas las plataformas', done: true },
+      { id: 'cl-2', text: 'Enviar newsletter', done: true },
+      { id: 'cl-3', text: 'Activar ads', done: true },
+    ],
+    reminders: [],
+    createdAt: subDays(today, 45),
+    updatedAt: subDays(today, 15),
+  },
+  // Future events
+  {
+    id: 'evt-8',
+    type: 'user',
+    title: 'Pre-order "El Jardín Secreto"',
+    status: 'pending',
+    priority: 'high',
+    startAt: addDays(today, 20),
+    endAt: addDays(today, 20),
+    allDay: true,
+    marketplace: ['ES'],
+    bookIds: ['book-8'],
+    tags: [DEFAULT_TAGS[0], DEFAULT_TAGS[1]], // Lanzamiento, Promoción
+    description: 'Activar pre-venta del nuevo libro',
+    checklistItems: [
+      { id: 'cl-1', text: 'Finalizar portada', done: false },
+      { id: 'cl-2', text: 'Escribir descripción', done: false },
+      { id: 'cl-3', text: 'Configurar en KDP', done: false },
+    ],
+    reminders: [
+      { id: 'rem-1', offsetMinutes: 10080, channel: 'in_app', enabled: true },
+    ],
+    createdAt: subDays(today, 5),
+    updatedAt: today,
+  },
+];
