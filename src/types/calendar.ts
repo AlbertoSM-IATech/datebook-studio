@@ -1,0 +1,184 @@
+// ============================================
+// PUBLIFY EDITORIAL CALENDAR - TYPE DEFINITIONS
+// ============================================
+
+// Event Types
+export type EventType = 'system' | 'user';
+
+// Event Status
+export type EventStatus = 'pending' | 'in_progress' | 'review' | 'done' | 'cancelled';
+
+// Event Priority
+export type EventPriority = 'low' | 'medium' | 'high' | 'urgent';
+
+// Reminder Channel
+export type ReminderChannel = 'in_app' | 'email' | 'push';
+
+// Marketplace
+export type Marketplace = 'ES' | 'US' | 'DE' | 'FR' | 'IT' | 'UK' | 'CA' | 'AU' | 'MX' | 'BR' | 'JP';
+
+// Checklist Item
+export interface ChecklistItem {
+  id: string;
+  text: string;
+  done: boolean;
+  section?: string;
+}
+
+// Reminder
+export interface Reminder {
+  id: string;
+  offsetMinutes: number; // Minutes before event
+  channel: ReminderChannel;
+  enabled: boolean;
+  triggered?: boolean;
+}
+
+// Tag
+export interface Tag {
+  id: string;
+  name: string;
+  color: string; // HSL color
+}
+
+// Book (simplified for calendar reference)
+export interface Book {
+  id: string;
+  title: string;
+}
+
+// Editorial Event
+export interface EditorialEvent {
+  id: string;
+  type: EventType;
+  systemKey?: string; // For system events (e.g., 'black_friday', 'valentines_day')
+  title: string;
+  status: EventStatus;
+  priority: EventPriority;
+  startAt: Date;
+  endAt: Date;
+  allDay: boolean;
+  marketplace?: Marketplace[];
+  bookIds: string[];
+  tags: Tag[];
+  description: string;
+  checklistItems: ChecklistItem[];
+  reminders: Reminder[];
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+// System Event Template (for predefined annual events)
+export interface SystemEventTemplate {
+  key: string;
+  name: string;
+  description: string;
+  month: number; // 1-12
+  day: number | null; // null for dynamic dates (e.g., Black Friday)
+  dynamicRule?: string; // e.g., 'fourth_friday_november'
+  category: string;
+  defaultTags: Tag[];
+  defaultReminders: Reminder[];
+  enabled: boolean;
+}
+
+// Calendar View Mode
+export type CalendarViewMode = 'month' | 'year';
+
+// Filter State
+export interface CalendarFilters {
+  showSystemEvents: boolean;
+  showUserEvents: boolean;
+  tags: string[];
+  marketplaces: Marketplace[];
+  statuses: EventStatus[];
+  priorities: EventPriority[];
+}
+
+// Quick Filter Chip
+export type QuickFilter = 'system' | 'user' | 'high_priority' | 'this_week';
+
+// Event Form Data (for creating/editing events)
+export interface EventFormData {
+  title: string;
+  type: EventType;
+  status: EventStatus;
+  priority: EventPriority;
+  startAt: Date;
+  endAt: Date;
+  allDay: boolean;
+  marketplace: Marketplace[];
+  bookIds: string[];
+  tags: Tag[];
+  description: string;
+  checklistItems: ChecklistItem[];
+  reminders: Reminder[];
+}
+
+// Calendar Day Cell Data
+export interface CalendarDayData {
+  date: Date;
+  isCurrentMonth: boolean;
+  isToday: boolean;
+  events: EditorialEvent[];
+}
+
+// Calendar Month Data
+export interface CalendarMonthData {
+  year: number;
+  month: number;
+  days: CalendarDayData[];
+}
+
+// Status configuration
+export const STATUS_CONFIG: Record<EventStatus, { label: string; color: string; bgClass: string }> = {
+  pending: { label: 'Pendiente', color: 'hsl(var(--status-pending))', bgClass: 'badge-pending' },
+  in_progress: { label: 'En progreso', color: 'hsl(var(--status-in-progress))', bgClass: 'badge-in-progress' },
+  review: { label: 'En revisión', color: 'hsl(var(--status-review))', bgClass: 'badge-review' },
+  done: { label: 'Hecho', color: 'hsl(var(--status-done))', bgClass: 'badge-done' },
+  cancelled: { label: 'Cancelado', color: 'hsl(var(--status-cancelled))', bgClass: 'badge-cancelled' },
+};
+
+// Priority configuration
+export const PRIORITY_CONFIG: Record<EventPriority, { label: string; color: string; icon: string; bgClass: string }> = {
+  low: { label: 'Baja', color: 'hsl(var(--priority-low))', icon: 'ArrowDown', bgClass: 'badge-priority-low' },
+  medium: { label: 'Media', color: 'hsl(var(--priority-medium))', icon: 'Minus', bgClass: 'badge-priority-medium' },
+  high: { label: 'Alta', color: 'hsl(var(--priority-high))', icon: 'ArrowUp', bgClass: 'badge-priority-high' },
+  urgent: { label: 'Urgente', color: 'hsl(var(--priority-urgent))', icon: 'AlertTriangle', bgClass: 'badge-priority-urgent' },
+};
+
+// Marketplace configuration
+export const MARKETPLACE_CONFIG: Record<Marketplace, { label: string; flag: string }> = {
+  ES: { label: 'España', flag: '🇪🇸' },
+  US: { label: 'Estados Unidos', flag: '🇺🇸' },
+  DE: { label: 'Alemania', flag: '🇩🇪' },
+  FR: { label: 'Francia', flag: '🇫🇷' },
+  IT: { label: 'Italia', flag: '🇮🇹' },
+  UK: { label: 'Reino Unido', flag: '🇬🇧' },
+  CA: { label: 'Canadá', flag: '🇨🇦' },
+  AU: { label: 'Australia', flag: '🇦🇺' },
+  MX: { label: 'México', flag: '🇲🇽' },
+  BR: { label: 'Brasil', flag: '🇧🇷' },
+  JP: { label: 'Japón', flag: '🇯🇵' },
+};
+
+// Default reminder presets
+export const REMINDER_PRESETS = [
+  { label: '10 minutos antes', offsetMinutes: 10 },
+  { label: '30 minutos antes', offsetMinutes: 30 },
+  { label: '1 hora antes', offsetMinutes: 60 },
+  { label: '2 horas antes', offsetMinutes: 120 },
+  { label: '1 día antes', offsetMinutes: 1440 },
+  { label: '2 días antes', offsetMinutes: 2880 },
+  { label: '1 semana antes', offsetMinutes: 10080 },
+];
+
+// Default tags
+export const DEFAULT_TAGS: Tag[] = [
+  { id: 'launch', name: 'Lanzamiento', color: 'hsl(24 94% 59%)' },
+  { id: 'promo', name: 'Promoción', color: 'hsl(217 91% 60%)' },
+  { id: 'marketing', name: 'Marketing', color: 'hsl(142 71% 45%)' },
+  { id: 'content', name: 'Contenido', color: 'hsl(262 83% 58%)' },
+  { id: 'deadline', name: 'Deadline', color: 'hsl(0 84% 60%)' },
+  { id: 'meeting', name: 'Reunión', color: 'hsl(38 92% 50%)' },
+];
