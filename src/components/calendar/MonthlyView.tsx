@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useCallback } from 'react';
 import {
   format,
   startOfMonth,
@@ -15,10 +15,9 @@ import {
 import { es } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
-import { ChevronLeft, ChevronRight, Calendar as CalendarIcon } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Calendar as CalendarIcon, GripVertical } from 'lucide-react';
 import { useCalendarContext } from '@/contexts/CalendarContext';
 import { useEvents } from '@/hooks/useEvents';
-import { useCalendarFilters } from '@/hooks/useCalendarFilters';
 import { EventChip } from './EventChip';
 import { EditorialEvent, CalendarFilters } from '@/types/calendar';
 
@@ -30,9 +29,9 @@ interface MonthlyViewProps {
 
 export function MonthlyView({ filters }: MonthlyViewProps) {
   const { selectedDate, setSelectedDate, setSelectedEvent, setIsEventPanelOpen, setQuickCreateDate, setIsQuickCreateOpen } = useCalendarContext();
-  const { getEventsForDay, filterEvents, events } = useEvents();
+  const { getEventsForDay, filterEvents, moveEvent } = useEvents();
   const [draggedEvent, setDraggedEvent] = useState<EditorialEvent | null>(null);
-  const { moveEvent } = useEvents();
+  const [dragOverDay, setDragOverDay] = useState<Date | null>(null);
 
   const monthStart = startOfMonth(selectedDate);
   const monthEnd = endOfMonth(selectedDate);
@@ -64,21 +63,39 @@ export function MonthlyView({ filters }: MonthlyViewProps) {
     setIsEventPanelOpen(true);
   };
 
-  const handleDragStart = (event: EditorialEvent) => {
-    if (event.type === 'system') return;
+  const handleDragStart = useCallback((e: React.DragEvent, event: EditorialEvent) => {
+    if (event.type === 'system') {
+      e.preventDefault();
+      return;
+    }
+    e.dataTransfer.effectAllowed = 'move';
+    e.dataTransfer.setData('text/plain', event.id);
     setDraggedEvent(event);
-  };
+  }, []);
 
-  const handleDragOver = (e: React.DragEvent) => {
+  const handleDragEnd = useCallback(() => {
+    setDraggedEvent(null);
+    setDragOverDay(null);
+  }, []);
+
+  const handleDragOver = useCallback((e: React.DragEvent, day: Date) => {
     e.preventDefault();
-  };
+    e.dataTransfer.dropEffect = 'move';
+    setDragOverDay(day);
+  }, []);
 
-  const handleDrop = (day: Date) => {
+  const handleDragLeave = useCallback(() => {
+    setDragOverDay(null);
+  }, []);
+
+  const handleDrop = useCallback((e: React.DragEvent, day: Date) => {
+    e.preventDefault();
     if (draggedEvent && draggedEvent.type !== 'system') {
       moveEvent(draggedEvent.id, day);
     }
     setDraggedEvent(null);
-  };
+    setDragOverDay(null);
+  }, [draggedEvent, moveEvent]);
 
   return (
     <div className="flex flex-col h-full">
@@ -94,10 +111,20 @@ export function MonthlyView({ filters }: MonthlyViewProps) {
           </Button>
         </div>
         <div className="flex items-center gap-2">
-          <Button variant="outline" size="icon" onClick={() => navigateMonth('prev')}>
+          <Button 
+            variant="outline" 
+            size="icon" 
+            onClick={() => navigateMonth('prev')}
+            aria-label="Mes anterior"
+          >
             <ChevronLeft className="h-4 w-4" />
           </Button>
-          <Button variant="outline" size="icon" onClick={() => navigateMonth('next')}>
+          <Button 
+            variant="outline" 
+            size="icon" 
+            onClick={() => navigateMonth('next')}
+            aria-label="Mes siguiente"
+          >
             <ChevronRight className="h-4 w-4" />
           </Button>
         </div>
@@ -124,6 +151,7 @@ export function MonthlyView({ filters }: MonthlyViewProps) {
             const isCurrentMonth = isSameMonth(day, selectedDate);
             const isSelected = isSameDay(day, selectedDate);
             const isTodayDate = isToday(day);
+            const isDragOver = dragOverDay && isSameDay(day, dragOverDay);
 
             return (
               <div
@@ -133,11 +161,13 @@ export function MonthlyView({ filters }: MonthlyViewProps) {
                   'hover:border-primary/50 hover:bg-primary/5',
                   !isCurrentMonth && 'opacity-40 bg-muted/30',
                   isSelected && 'ring-2 ring-primary border-primary',
-                  isTodayDate && 'bg-primary/10 border-primary/30'
+                  isTodayDate && 'bg-primary/10 border-primary/30',
+                  isDragOver && 'bg-accent/20 border-accent border-2 scale-[1.02]'
                 )}
                 onClick={() => handleDayClick(day)}
-                onDragOver={handleDragOver}
-                onDrop={() => handleDrop(day)}
+                onDragOver={(e) => handleDragOver(e, day)}
+                onDragLeave={handleDragLeave}
+                onDrop={(e) => handleDrop(e, day)}
               >
                 <div className="flex items-center justify-between mb-1">
                   <span
@@ -158,12 +188,22 @@ export function MonthlyView({ filters }: MonthlyViewProps) {
                     <div
                       key={event.id}
                       draggable={event.type !== 'system'}
-                      onDragStart={() => handleDragStart(event)}
+                      onDragStart={(e) => handleDragStart(e, event)}
+                      onDragEnd={handleDragEnd}
                       onClick={(e) => {
                         e.stopPropagation();
                         handleEventClick(event);
                       }}
+                      className={cn(
+                        'group relative',
+                        event.type !== 'system' && 'cursor-grab active:cursor-grabbing'
+                      )}
                     >
+                      {event.type !== 'system' && (
+                        <div className="absolute left-0 top-1/2 -translate-y-1/2 -translate-x-1 opacity-0 group-hover:opacity-50 transition-opacity">
+                          <GripVertical className="h-3 w-3 text-muted-foreground" />
+                        </div>
+                      )}
                       <EventChip
                         event={event}
                         compact
@@ -177,6 +217,15 @@ export function MonthlyView({ filters }: MonthlyViewProps) {
           })}
         </div>
       </div>
+
+      {/* Drag indicator */}
+      {draggedEvent && (
+        <div className="fixed bottom-4 left-1/2 -translate-x-1/2 bg-card border border-border rounded-lg px-4 py-2 shadow-lg z-50 animate-fade-in">
+          <p className="text-sm text-muted-foreground">
+            Arrastra <span className="font-medium text-foreground">{draggedEvent.title}</span> a otro día
+          </p>
+        </div>
+      )}
     </div>
   );
 }

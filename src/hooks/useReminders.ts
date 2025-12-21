@@ -10,9 +10,55 @@ interface TriggeredReminder {
   triggeredAt: Date;
 }
 
+// Request notification permission
+async function requestNotificationPermission(): Promise<boolean> {
+  if (!('Notification' in window)) {
+    console.warn('This browser does not support notifications');
+    return false;
+  }
+
+  if (Notification.permission === 'granted') {
+    return true;
+  }
+
+  if (Notification.permission !== 'denied') {
+    const permission = await Notification.requestPermission();
+    return permission === 'granted';
+  }
+
+  return false;
+}
+
+// Send push notification
+function sendPushNotification(title: string, body: string, icon?: string) {
+  if (Notification.permission === 'granted') {
+    const notification = new Notification(title, {
+      body,
+      icon: icon || '/favicon.ico',
+      badge: '/favicon.ico',
+      tag: `publify-reminder-${Date.now()}`,
+      requireInteraction: true,
+    });
+
+    notification.onclick = () => {
+      window.focus();
+      notification.close();
+    };
+
+    // Auto close after 30 seconds
+    setTimeout(() => notification.close(), 30000);
+  }
+}
+
 export function useReminders(events: EditorialEvent[]) {
   const { toast } = useToast();
   const [triggeredReminders, setTriggeredReminders] = useState<TriggeredReminder[]>([]);
+  const [notificationsEnabled, setNotificationsEnabled] = useState(false);
+
+  // Request permission on mount
+  useEffect(() => {
+    requestNotificationPermission().then(setNotificationsEnabled);
+  }, []);
 
   const checkReminders = useCallback(() => {
     const now = new Date();
@@ -21,7 +67,6 @@ export function useReminders(events: EditorialEvent[]) {
       event.reminders
         .filter(reminder => reminder.enabled)
         .forEach(reminder => {
-          const reminderKey = `${event.id}-${reminder.id}`;
           const alreadyTriggered = triggeredReminders.some(
             tr => tr.eventId === event.id && tr.reminderId === reminder.id
           );
@@ -33,12 +78,23 @@ export function useReminders(events: EditorialEvent[]) {
 
           // Trigger if within 1 minute window
           if (diffMinutes >= -1 && diffMinutes <= 1) {
-            // Fire notification
+            const eventDate = format(event.startAt, "d 'de' MMMM 'a las' HH:mm", { locale: es });
+            const message = `${event.title} - ${eventDate}`;
+
+            // Fire toast notification (in-app)
             toast({
               title: '📅 Recordatorio',
-              description: `${event.title} - ${format(event.startAt, "d 'de' MMMM 'a las' HH:mm", { locale: es })}`,
+              description: message,
               duration: 10000,
             });
+
+            // Fire push notification (browser)
+            if (notificationsEnabled) {
+              sendPushNotification(
+                '📅 Recordatorio - Publify',
+                message
+              );
+            }
 
             // Mark as triggered
             setTriggeredReminders(prev => [
@@ -48,7 +104,7 @@ export function useReminders(events: EditorialEvent[]) {
           }
         });
     });
-  }, [events, triggeredReminders, toast]);
+  }, [events, triggeredReminders, toast, notificationsEnabled]);
 
   // Check reminders every minute
   useEffect(() => {
@@ -89,10 +145,18 @@ export function useReminders(events: EditorialEvent[]) {
     return results.sort((a, b) => a.triggerTime.getTime() - b.triggerTime.getTime());
   }, [events]);
 
+  const requestPermission = useCallback(async () => {
+    const granted = await requestNotificationPermission();
+    setNotificationsEnabled(granted);
+    return granted;
+  }, []);
+
   return {
     triggeredReminders,
     clearTriggeredReminder,
     getUpcomingReminders,
     checkReminders,
+    notificationsEnabled,
+    requestPermission,
   };
 }
