@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import { format, isSameDay, startOfWeek, endOfWeek, eachDayOfInterval, isToday } from 'date-fns';
+import { format, startOfWeek, endOfWeek, eachDayOfInterval, isToday, startOfMonth, endOfMonth } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -9,17 +9,22 @@ import { Separator } from '@/components/ui/separator';
 import { 
   Calendar as CalendarIcon, 
   ChevronRight, 
+  ChevronLeft,
   Plus, 
   ArrowUp, 
   ArrowDown, 
   Minus, 
   AlertTriangle,
   Zap,
-  Clock 
+  Clock,
+  Bell,
+  BellOff
 } from 'lucide-react';
 import { useEvents } from '@/hooks/useEvents';
+import { useReminders } from '@/hooks/useReminders';
 import { useNavigate } from 'react-router-dom';
-import { EditorialEvent, STATUS_CONFIG, PRIORITY_CONFIG, QuickFilter } from '@/types/calendar';
+import { STATUS_CONFIG, PRIORITY_CONFIG, QuickFilter } from '@/types/calendar';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 
 const PriorityIcon = {
   low: ArrowDown,
@@ -37,13 +42,21 @@ const QUICK_FILTERS: { id: QuickFilter; label: string; icon: React.ElementType }
 
 export function CalendarWidget() {
   const navigate = useNavigate();
-  const { getUpcomingEvents, getThisWeekEvents, getEventsForDay, filterEvents, events } = useEvents();
+  const { getEventsForDay, events } = useEvents();
+  const { notificationsEnabled, requestPermission } = useReminders(events);
   const [activeFilters, setActiveFilters] = useState<QuickFilter[]>([]);
+  const [currentMonth, setCurrentMonth] = useState(new Date());
 
   const today = new Date();
   const weekStart = startOfWeek(today, { weekStartsOn: 1 });
   const weekEnd = endOfWeek(today, { weekStartsOn: 1 });
-  const weekDays = eachDayOfInterval({ start: weekStart, end: weekEnd });
+
+  // Get days for the current month mini-calendar
+  const monthStart = startOfMonth(currentMonth);
+  const monthEnd = endOfMonth(currentMonth);
+  const calendarStart = startOfWeek(monthStart, { weekStartsOn: 1 });
+  const calendarEnd = endOfWeek(monthEnd, { weekStartsOn: 1 });
+  const calendarDays = eachDayOfInterval({ start: calendarStart, end: calendarEnd });
 
   // Get upcoming events based on filters
   const upcomingEvents = useMemo(() => {
@@ -77,6 +90,14 @@ export function CalendarWidget() {
     return getEventsForDay(day).length;
   };
 
+  const navigateMonth = (direction: 'prev' | 'next') => {
+    setCurrentMonth(prev => {
+      const newDate = new Date(prev);
+      newDate.setMonth(prev.getMonth() + (direction === 'next' ? 1 : -1));
+      return newDate;
+    });
+  };
+
   return (
     <Card className="w-full card-hover">
       <CardHeader className="pb-3">
@@ -85,44 +106,90 @@ export function CalendarWidget() {
             <CalendarIcon className="h-5 w-5 text-primary" />
             Calendario Editorial
           </CardTitle>
-          <Button variant="ghost" size="sm" onClick={() => navigate('/calendario')} className="gap-1 text-primary">
-            Abrir
-            <ChevronRight className="h-4 w-4" />
-          </Button>
+          <div className="flex items-center gap-1">
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-8 w-8"
+                  onClick={requestPermission}
+                  aria-label={notificationsEnabled ? 'Notificaciones activadas' : 'Activar notificaciones'}
+                >
+                  {notificationsEnabled ? (
+                    <Bell className="h-4 w-4 text-primary" />
+                  ) : (
+                    <BellOff className="h-4 w-4 text-muted-foreground" />
+                  )}
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>
+                {notificationsEnabled ? 'Notificaciones activadas' : 'Activar notificaciones push'}
+              </TooltipContent>
+            </Tooltip>
+            <Button variant="ghost" size="sm" onClick={() => navigate('/calendario')} className="gap-1 text-primary">
+              Abrir
+              <ChevronRight className="h-4 w-4" />
+            </Button>
+          </div>
         </div>
       </CardHeader>
 
       <CardContent className="space-y-4">
-        {/* Mini Week Calendar */}
-        <div className="grid grid-cols-7 gap-1">
-          {weekDays.map((day) => {
-            const density = getEventDensityForDay(day);
-            const isTodayDate = isToday(day);
-            
-            return (
-              <div
-                key={day.toISOString()}
-                className={cn(
-                  'text-center py-2 rounded-md transition-colors',
-                  isTodayDate && 'bg-primary text-primary-foreground',
-                  !isTodayDate && density > 0 && 'bg-primary/20',
-                  !isTodayDate && density === 0 && 'bg-muted/50'
-                )}
-              >
-                <div className="text-[10px] uppercase text-muted-foreground font-medium">
-                  {format(day, 'EEE', { locale: es })}
-                </div>
-                <div className={cn('text-sm font-semibold', isTodayDate && 'text-primary-foreground')}>
+        {/* Mini Monthly Calendar */}
+        <div className="space-y-2">
+          <div className="flex items-center justify-between">
+            <Button 
+              variant="ghost" 
+              size="icon" 
+              className="h-6 w-6"
+              onClick={() => navigateMonth('prev')}
+              aria-label="Mes anterior"
+            >
+              <ChevronLeft className="h-4 w-4" />
+            </Button>
+            <span className="text-sm font-medium capitalize">
+              {format(currentMonth, 'MMMM yyyy', { locale: es })}
+            </span>
+            <Button 
+              variant="ghost" 
+              size="icon" 
+              className="h-6 w-6"
+              onClick={() => navigateMonth('next')}
+              aria-label="Mes siguiente"
+            >
+              <ChevronRight className="h-4 w-4" />
+            </Button>
+          </div>
+          
+          <div className="grid grid-cols-7 gap-0.5 text-[10px]">
+            {['L', 'M', 'X', 'J', 'V', 'S', 'D'].map((day) => (
+              <div key={day} className="text-center text-muted-foreground font-medium py-1">
+                {day}
+              </div>
+            ))}
+            {calendarDays.map((day) => {
+              const density = getEventDensityForDay(day);
+              const isTodayDate = isToday(day);
+              const isCurrentMonth = day.getMonth() === currentMonth.getMonth();
+              
+              return (
+                <div
+                  key={day.toISOString()}
+                  className={cn(
+                    'aspect-square flex items-center justify-center rounded-sm transition-colors cursor-pointer hover:bg-primary/20',
+                    !isCurrentMonth && 'opacity-30',
+                    isTodayDate && 'bg-primary text-primary-foreground font-bold',
+                    !isTodayDate && density > 0 && 'bg-primary/20',
+                    !isTodayDate && density > 2 && 'bg-primary/40'
+                  )}
+                  onClick={() => navigate('/calendario')}
+                >
                   {format(day, 'd')}
                 </div>
-                {density > 0 && !isTodayDate && (
-                  <div className="flex justify-center mt-1">
-                    <div className="w-1.5 h-1.5 rounded-full bg-primary" />
-                  </div>
-                )}
-              </div>
-            );
-          })}
+              );
+            })}
+          </div>
         </div>
 
         <Separator />
@@ -142,6 +209,15 @@ export function CalendarWidget() {
                   isActive && 'shadow-coral'
                 )}
                 onClick={() => toggleFilter(filter.id)}
+                role="checkbox"
+                aria-checked={isActive}
+                tabIndex={0}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault();
+                    toggleFilter(filter.id);
+                  }
+                }}
               >
                 <Icon className="h-3 w-3" />
                 {filter.label}
@@ -167,10 +243,12 @@ export function CalendarWidget() {
                 const statusConfig = STATUS_CONFIG[event.status];
                 
                 return (
-                  <div
+                  <button
                     key={event.id}
+                    onClick={() => navigate('/calendario')}
                     className={cn(
-                      'p-3 rounded-lg border border-border/50 transition-all hover:border-primary/50 hover:bg-primary/5',
+                      'w-full text-left p-3 rounded-lg border border-border/50 transition-all',
+                      'hover:border-primary/50 hover:bg-primary/5 focus:outline-none focus:ring-2 focus:ring-primary',
                       event.type === 'system' ? 'event-system' : 'event-user'
                     )}
                   >
@@ -189,7 +267,7 @@ export function CalendarWidget() {
                         <Icon className={cn('h-3.5 w-3.5', `text-priority-${event.priority}`)} />
                       </div>
                     </div>
-                  </div>
+                  </button>
                 );
               })}
             </div>
