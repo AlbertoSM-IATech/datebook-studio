@@ -1,23 +1,32 @@
 import { CalendarWidget } from '@/components/calendar';
-import { Header } from '@/components/layout';
+import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Calendar, TrendingUp, BookOpen, Bell } from 'lucide-react';
-import { useEvents } from '@/hooks/useEvents';
-import { startOfMonth, endOfMonth } from 'date-fns';
-
+import { useNavigate } from 'react-router-dom';
+import { Calendar, BookOpen, TrendingUp, Users } from 'lucide-react';
 const Index = () => {
-  const { events } = useEvents();
-  const today = new Date();
-  const monthStart = startOfMonth(today);
-  const monthEnd = endOfMonth(today);
-  
-  const eventsThisMonth = events.filter(
-    e => e.startAt >= monthStart && e.startAt <= monthEnd
-  ).length;
-
-  return (
-    <div className="min-h-screen bg-background">
-      <Header />
+  const navigate = useNavigate();
+  return <div className="min-h-screen bg-background">
+      {/* Header */}
+      <header className="border-b border-border bg-card">
+        <div className="container mx-auto px-4 py-4 flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-lg bg-primary flex items-center justify-center">
+              <BookOpen className="h-5 w-5 text-primary-foreground" />
+            </div>
+            <div>
+              <h1 className="font-heading font-bold text-xl">Publify</h1>
+              <p className="text-xs text-muted-foreground">Sistema Operativo Editorial</p>
+            </div>
+          </div>
+          <nav className="flex items-center gap-4">
+            
+            <Button variant="ghost" onClick={() => navigate('/calendario')} className="gap-2">
+              <Calendar className="h-4 w-4" />
+              Calendario
+            </Button>
+          </nav>
+        </div>
+      </header>
 
       {/* Main Content */}
       <main className="container mx-auto px-4 py-8">
@@ -26,76 +35,118 @@ const Index = () => {
           <p className="text-muted-foreground">Tu centro de control editorial. Orden, foco y control.</p>
         </div>
 
-        {/* Dashboard Grid - Inverted: Calendar left, Stats right */}
+        {/* Dashboard Grid */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* Left Column - Calendar Widget (now larger) */}
+          {/* Left Column - Stats */}
           <div className="lg:col-span-2 space-y-6">
-            <CalendarWidget />
-          </div>
+            {/* Quick Stats */}
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+              <Card className="card-hover">
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-sm font-medium text-muted-foreground">Libros Activos</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="flex items-center gap-2">
+                    <BookOpen className="h-8 w-8 text-primary" />
+                    <span className="text-3xl font-heading font-bold">8</span>
+                  </div>
+                </CardContent>
+              </Card>
 
-          {/* Right Column - Stats & Activity */}
-          <div className="space-y-6">
-            {/* Events This Month Card */}
+              <Card className="card-hover">
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-sm font-medium text-muted-foreground">Eventos Este Mes</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="flex items-center gap-2">
+                    <Calendar className="h-8 w-8 text-accent" />
+                    <span className="text-3xl font-heading font-bold">12</span>
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card className="card-hover">
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-sm font-medium text-muted-foreground">Ventas Hoy</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="flex items-center gap-2">
+                    <TrendingUp className="h-8 w-8 text-green-500" />
+                    <span className="text-3xl font-heading font-bold">€247</span>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+
+            {/* Placeholder Cards */}
             <Card className="card-hover">
-              <CardHeader className="pb-2">
-                <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
-                  <Calendar className="h-4 w-4" />
-                  Eventos Este Mes
-                </CardTitle>
+              <CardHeader>
+                <CardTitle className="font-heading">Rendimiento de Libros</CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="flex items-center gap-3">
-                  <div className="w-12 h-12 rounded-lg bg-accent/20 flex items-center justify-center">
-                    <Calendar className="h-6 w-6 text-accent" />
-                  </div>
-                  <div>
-                    <span className="text-3xl font-heading font-bold">{eventsThisMonth}</span>
-                    <p className="text-xs text-muted-foreground">eventos programados</p>
-                  </div>
+                <div className="h-48 flex items-center justify-center bg-muted/30 rounded-lg">
+                  <p className="text-muted-foreground">Gráfico de ventas por libro</p>
                 </div>
               </CardContent>
             </Card>
 
-            {/* Activity Feed */}
             <Card className="card-hover">
-              <CardHeader className="pb-3">
-                <CardTitle className="font-heading text-lg flex items-center gap-2">
-                  <TrendingUp className="h-5 w-5 text-primary" />
-                  Actividad Reciente
-                </CardTitle>
+              <CardHeader>
+                <CardTitle className="font-heading">Actividad Reciente</CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="space-y-3">
-                  {[
-                    { action: 'Lanzamiento programado', book: 'El Último Verano', time: 'En 5 días', icon: BookOpen },
-                    { action: 'Nuevo review', book: 'Secretos del Mar', time: 'Hace 2 horas', icon: TrendingUp },
-                    { action: 'Recordatorio activado', book: 'El Detective', time: 'Hace 1 día', icon: Bell },
-                  ].map((activity, i) => {
-                    const Icon = activity.icon;
-                    return (
-                      <div 
-                        key={i} 
-                        className="flex items-center gap-3 py-2 border-b border-border/50 last:border-0"
-                      >
-                        <div className="w-8 h-8 rounded-lg bg-muted flex items-center justify-center shrink-0">
-                          <Icon className="h-4 w-4 text-muted-foreground" />
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <p className="font-medium text-sm truncate">{activity.action}</p>
-                          <p className="text-xs text-muted-foreground truncate">{activity.book}</p>
-                        </div>
-                        <span className="text-xs text-muted-foreground shrink-0">{activity.time}</span>
+                <div className="space-y-4">
+                  {[{
+                  action: 'Lanzamiento programado',
+                  book: 'El Último Verano',
+                  time: 'En 5 días'
+                }, {
+                  action: 'Nuevo review',
+                  book: 'Secretos del Mar',
+                  time: 'Hace 2 horas'
+                }, {
+                  action: 'Campaña AMS iniciada',
+                  book: 'El Detective',
+                  time: 'Hace 1 día'
+                }].map((activity, i) => <div key={i} className="flex items-center justify-between py-2 border-b border-border/50 last:border-0">
+                      <div>
+                        <p className="font-medium text-sm">{activity.action}</p>
+                        <p className="text-xs text-muted-foreground">{activity.book}</p>
                       </div>
-                    );
-                  })}
+                      <span className="text-xs text-muted-foreground">{activity.time}</span>
+                    </div>)}
                 </div>
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* Right Column - Calendar Widget */}
+          <div className="space-y-6">
+            <CalendarWidget />
+
+            {/* Quick Actions */}
+            <Card className="card-hover">
+              <CardHeader>
+                <CardTitle className="font-heading text-lg">Acciones Rápidas</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-2">
+                <Button variant="outline" className="w-full justify-start gap-2">
+                  <BookOpen className="h-4 w-4" />
+                  Añadir nuevo libro
+                </Button>
+                <Button variant="outline" className="w-full justify-start gap-2">
+                  <TrendingUp className="h-4 w-4" />
+                  Ver analytics
+                </Button>
+                <Button variant="outline" className="w-full justify-start gap-2">
+                  <Users className="h-4 w-4" />
+                  Gestionar lista de correo
+                </Button>
               </CardContent>
             </Card>
           </div>
         </div>
       </main>
-    </div>
-  );
+    </div>;
 };
-
 export default Index;
