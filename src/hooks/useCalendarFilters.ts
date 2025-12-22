@@ -4,17 +4,10 @@ import {
   QuickFilter,
   EventStatus,
   EventPriority,
-  Marketplace 
+  Marketplace,
+  EventOrigin,
+  DEFAULT_FILTERS,
 } from '@/types/calendar';
-
-const DEFAULT_FILTERS: CalendarFilters = {
-  showSystemEvents: true,
-  showUserEvents: true,
-  tags: [],
-  marketplaces: [],
-  statuses: [],
-  priorities: [],
-};
 
 export function useCalendarFilters() {
   const [filters, setFilters] = useState<CalendarFilters>(DEFAULT_FILTERS);
@@ -71,12 +64,37 @@ export function useCalendarFilters() {
     }));
   }, []);
 
+  const toggleBookId = useCallback((bookId: string): void => {
+    setFilters(prev => ({
+      ...prev,
+      bookIds: prev.bookIds.includes(bookId)
+        ? prev.bookIds.filter(b => b !== bookId)
+        : [...prev.bookIds, bookId],
+    }));
+  }, []);
+
+  const toggleOrigin = useCallback((origin: EventOrigin): void => {
+    setFilters(prev => ({
+      ...prev,
+      origin: prev.origin.includes(origin)
+        ? prev.origin.filter(o => o !== origin)
+        : [...prev.origin, origin],
+    }));
+  }, []);
+
+  const setSearchQuery = useCallback((query: string): void => {
+    setFilters(prev => ({ ...prev, searchQuery: query }));
+  }, []);
+
+  const setDateRange = useCallback((range: { from: Date; to: Date } | undefined): void => {
+    setFilters(prev => ({ ...prev, dateRange: range }));
+  }, []);
+
   const applyQuickFilter = useCallback((quickFilter: QuickFilter): void => {
     const isActive = activeQuickFilters.includes(quickFilter);
     
     if (isActive) {
       setActiveQuickFilters(prev => prev.filter(f => f !== quickFilter));
-      // Reset the specific filter
       switch (quickFilter) {
         case 'system':
           setFilters(prev => ({ ...prev, showSystemEvents: true }));
@@ -88,12 +106,10 @@ export function useCalendarFilters() {
           setFilters(prev => ({ ...prev, priorities: [] }));
           break;
         case 'this_week':
-          // This is handled at the query level, not filter level
           break;
       }
     } else {
       setActiveQuickFilters(prev => [...prev, quickFilter]);
-      // Apply the filter
       switch (quickFilter) {
         case 'system':
           setFilters(prev => ({ ...prev, showSystemEvents: true, showUserEvents: false }));
@@ -105,7 +121,6 @@ export function useCalendarFilters() {
           setFilters(prev => ({ ...prev, priorities: ['high', 'urgent'] }));
           break;
         case 'this_week':
-          // This is handled at the query level
           break;
       }
     }
@@ -123,7 +138,10 @@ export function useCalendarFilters() {
       filters.tags.length > 0 ||
       filters.marketplaces.length > 0 ||
       filters.statuses.length > 0 ||
-      filters.priorities.length > 0
+      filters.priorities.length > 0 ||
+      filters.bookIds.length > 0 ||
+      filters.origin.length > 0 ||
+      filters.searchQuery !== ''
     );
   }, [filters]);
 
@@ -137,6 +155,10 @@ export function useCalendarFilters() {
     toggleMarketplace,
     toggleStatus,
     togglePriority,
+    toggleBookId,
+    toggleOrigin,
+    setSearchQuery,
+    setDateRange,
     applyQuickFilter,
     clearFilters,
     hasActiveFilters,

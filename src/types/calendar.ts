@@ -17,6 +17,9 @@ export type ReminderChannel = 'in_app' | 'email' | 'push';
 // Marketplace
 export type Marketplace = 'ES' | 'US' | 'DE' | 'FR' | 'IT' | 'UK' | 'CA' | 'AU' | 'MX' | 'BR' | 'JP';
 
+// Event Origin
+export type EventOrigin = 'local' | 'google';
+
 // Checklist Item
 export interface ChecklistItem {
   id: string;
@@ -28,7 +31,7 @@ export interface ChecklistItem {
 // Reminder
 export interface Reminder {
   id: string;
-  offsetMinutes: number; // Minutes before event
+  offsetMinutes: number;
   channel: ReminderChannel;
   enabled: boolean;
   triggered?: boolean;
@@ -38,20 +41,22 @@ export interface Reminder {
 export interface Tag {
   id: string;
   name: string;
-  color: string; // HSL color
+  color: string;
 }
 
 // Book (simplified for calendar reference)
 export interface Book {
   id: string;
   title: string;
+  coverUrl?: string;
+  author?: string;
 }
 
 // Editorial Event
 export interface EditorialEvent {
   id: string;
   type: EventType;
-  systemKey?: string; // For system events (e.g., 'black_friday', 'valentines_day')
+  systemKey?: string;
   title: string;
   status: EventStatus;
   priority: EventPriority;
@@ -64,26 +69,36 @@ export interface EditorialEvent {
   description: string;
   checklistItems: ChecklistItem[];
   reminders: Reminder[];
+  assignedTo?: string;
+  origin: EventOrigin;
+  googleEventId?: string;
+  googleCalendarId?: string;
+  syncedAt?: Date;
+  conflictState?: 'none' | 'local_changed' | 'google_changed' | 'both_changed';
   createdAt: Date;
   updatedAt: Date;
+  updatedBy?: string;
 }
 
-// System Event Template (for predefined annual events)
+// System Event Template
 export interface SystemEventTemplate {
   key: string;
   name: string;
   description: string;
-  month: number; // 1-12
-  day: number | null; // null for dynamic dates (e.g., Black Friday)
-  dynamicRule?: string; // e.g., 'fourth_friday_november'
+  month: number;
+  day: number | null;
+  dynamicRule?: string;
   category: string;
   defaultTags: Tag[];
   defaultReminders: Reminder[];
   enabled: boolean;
 }
 
-// Calendar View Mode
-export type CalendarViewMode = 'month' | 'year';
+// Calendar View Mode - Now includes 'list'
+export type CalendarViewMode = 'month' | 'year' | 'list';
+
+// Calendar Module Mode
+export type CalendarModuleMode = 'embedded' | 'page';
 
 // Filter State
 export interface CalendarFilters {
@@ -93,12 +108,17 @@ export interface CalendarFilters {
   marketplaces: Marketplace[];
   statuses: EventStatus[];
   priorities: EventPriority[];
+  bookIds: string[];
+  assignedTo: string[];
+  dateRange?: { from: Date; to: Date };
+  origin: EventOrigin[];
+  searchQuery: string;
 }
 
 // Quick Filter Chip
 export type QuickFilter = 'system' | 'user' | 'high_priority' | 'this_week';
 
-// Event Form Data (for creating/editing events)
+// Event Form Data
 export interface EventFormData {
   title: string;
   type: EventType;
@@ -113,6 +133,7 @@ export interface EventFormData {
   description: string;
   checklistItems: ChecklistItem[];
   reminders: Reminder[];
+  assignedTo?: string;
 }
 
 // Calendar Day Cell Data
@@ -128,6 +149,45 @@ export interface CalendarMonthData {
   year: number;
   month: number;
   days: CalendarDayData[];
+}
+
+// Google Calendar Types
+export interface GoogleCalendarConnection {
+  isConnected: boolean;
+  email?: string;
+  accessToken?: string;
+  refreshToken?: string;
+  tokenExpiresAt?: Date;
+  selectedCalendars: string[];
+  lastSyncAt?: Date;
+  syncEnabled: boolean;
+}
+
+export interface GoogleCalendarSyncLog {
+  id: string;
+  timestamp: Date;
+  action: 'import' | 'export' | 'sync';
+  status: 'success' | 'error' | 'partial';
+  eventsProcessed: number;
+  eventsCreated: number;
+  eventsUpdated: number;
+  eventsFailed: number;
+  errors?: string[];
+}
+
+// List View Column
+export interface ListViewColumn {
+  key: string;
+  label: string;
+  visible: boolean;
+  sortable: boolean;
+  width?: string;
+}
+
+// Sort State
+export interface SortState {
+  column: string;
+  direction: 'asc' | 'desc';
 }
 
 // Status configuration
@@ -181,4 +241,33 @@ export const DEFAULT_TAGS: Tag[] = [
   { id: 'content', name: 'Contenido', color: 'hsl(262 83% 58%)' },
   { id: 'deadline', name: 'Deadline', color: 'hsl(0 84% 60%)' },
   { id: 'meeting', name: 'Reunión', color: 'hsl(38 92% 50%)' },
+];
+
+// Default filters
+export const DEFAULT_FILTERS: CalendarFilters = {
+  showSystemEvents: true,
+  showUserEvents: true,
+  tags: [],
+  marketplaces: [],
+  statuses: [],
+  priorities: [],
+  bookIds: [],
+  assignedTo: [],
+  origin: [],
+  searchQuery: '',
+};
+
+// Default list columns
+export const DEFAULT_LIST_COLUMNS: ListViewColumn[] = [
+  { key: 'startAt', label: 'Fecha inicio', visible: true, sortable: true, width: '120px' },
+  { key: 'endAt', label: 'Fecha fin', visible: true, sortable: true, width: '120px' },
+  { key: 'title', label: 'Título', visible: true, sortable: true },
+  { key: 'status', label: 'Estado', visible: true, sortable: true, width: '120px' },
+  { key: 'priority', label: 'Prioridad', visible: true, sortable: true, width: '100px' },
+  { key: 'assignedTo', label: 'Asignado', visible: false, sortable: true, width: '120px' },
+  { key: 'marketplace', label: 'Mercado', visible: true, sortable: false, width: '100px' },
+  { key: 'bookIds', label: 'Libros', visible: true, sortable: false, width: '150px' },
+  { key: 'tags', label: 'Etiquetas', visible: true, sortable: false, width: '150px' },
+  { key: 'type', label: 'Fuente', visible: true, sortable: true, width: '90px' },
+  { key: 'origin', label: 'Origen', visible: false, sortable: true, width: '90px' },
 ];

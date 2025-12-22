@@ -51,7 +51,7 @@ import {
 
 export function EventPanel() {
   const { selectedEvent, setSelectedEvent, isEventPanelOpen, setIsEventPanelOpen } = useCalendarContext();
-  const { updateEvent, deleteEvent, duplicateAsUserEvent, saveStatus } = useEvents();
+  const { updateEvent, deleteEvent, duplicateEvent, saveStatus } = useEvents();
   const { books, getBooksByIds } = useBooks();
 
   const [localEvent, setLocalEvent] = useState<EditorialEvent | null>(null);
@@ -90,8 +90,8 @@ export function EventPanel() {
   };
 
   const handleDuplicate = () => {
-    if (localEvent && localEvent.type === 'system') {
-      const newEvent = duplicateAsUserEvent(localEvent.id);
+    if (localEvent) {
+      const newEvent = duplicateEvent(localEvent.id);
       if (newEvent) {
         setSelectedEvent(newEvent);
       }

@@ -17,7 +17,6 @@ export const MOCK_BOOKS: Book[] = [
 const today = startOfDay(new Date());
 
 export const MOCK_EVENTS: EditorialEvent[] = [
-  // User events
   {
     id: 'evt-1',
     type: 'user',
@@ -29,7 +28,7 @@ export const MOCK_EVENTS: EditorialEvent[] = [
     allDay: true,
     marketplace: ['ES', 'MX'],
     bookIds: ['book-1'],
-    tags: [DEFAULT_TAGS[0]], // Lanzamiento
+    tags: [DEFAULT_TAGS[0]],
     description: 'Lanzamiento oficial del libro en mercados hispanohablantes. Coordinar con equipo de marketing.',
     checklistItems: [
       { id: 'cl-1', text: 'Preparar portada final', done: true, section: 'Pre-lanzamiento' },
@@ -43,6 +42,7 @@ export const MOCK_EVENTS: EditorialEvent[] = [
       { id: 'rem-1', offsetMinutes: 10080, channel: 'in_app', enabled: true },
       { id: 'rem-2', offsetMinutes: 1440, channel: 'in_app', enabled: true },
     ],
+    origin: 'local',
     createdAt: subDays(today, 30),
     updatedAt: subDays(today, 2),
   },
@@ -57,7 +57,7 @@ export const MOCK_EVENTS: EditorialEvent[] = [
     allDay: true,
     marketplace: ['US', 'UK', 'CA', 'AU'],
     bookIds: ['book-2', 'book-3', 'book-4'],
-    tags: [DEFAULT_TAGS[1]], // Promoción
+    tags: [DEFAULT_TAGS[1]],
     description: 'Promoción de fin de semana. 3 días de descuento del 50% en mercados de habla inglesa.',
     checklistItems: [
       { id: 'cl-1', text: 'Programar cambio de precio', done: false },
@@ -67,6 +67,7 @@ export const MOCK_EVENTS: EditorialEvent[] = [
     reminders: [
       { id: 'rem-1', offsetMinutes: 2880, channel: 'in_app', enabled: true },
     ],
+    origin: 'local',
     createdAt: subDays(today, 7),
     updatedAt: subDays(today, 1),
   },
@@ -80,7 +81,7 @@ export const MOCK_EVENTS: EditorialEvent[] = [
     endAt: addDays(today, 2),
     allDay: false,
     bookIds: ['book-7'],
-    tags: [DEFAULT_TAGS[4]], // Deadline
+    tags: [DEFAULT_TAGS[4]],
     description: 'Fecha límite para entrega del manuscrito final al editor.',
     checklistItems: [
       { id: 'cl-1', text: 'Revisión final de gramática', done: true },
@@ -92,6 +93,7 @@ export const MOCK_EVENTS: EditorialEvent[] = [
       { id: 'rem-1', offsetMinutes: 1440, channel: 'in_app', enabled: true },
       { id: 'rem-2', offsetMinutes: 120, channel: 'in_app', enabled: true },
     ],
+    origin: 'local',
     createdAt: subDays(today, 60),
     updatedAt: today,
   },
@@ -105,7 +107,7 @@ export const MOCK_EVENTS: EditorialEvent[] = [
     endAt: addHours(addDays(today, 7), 11),
     allDay: false,
     bookIds: ['book-5'],
-    tags: [DEFAULT_TAGS[5]], // Reunión
+    tags: [DEFAULT_TAGS[5]],
     description: 'Revisión de borradores de portada para "Mundos Paralelos"',
     checklistItems: [
       { id: 'cl-1', text: 'Preparar referencias visuales', done: false },
@@ -114,6 +116,7 @@ export const MOCK_EVENTS: EditorialEvent[] = [
     reminders: [
       { id: 'rem-1', offsetMinutes: 60, channel: 'in_app', enabled: true },
     ],
+    origin: 'local',
     createdAt: subDays(today, 3),
     updatedAt: subDays(today, 1),
   },
@@ -128,7 +131,7 @@ export const MOCK_EVENTS: EditorialEvent[] = [
     allDay: true,
     marketplace: ['US'],
     bookIds: ['book-4'],
-    tags: [DEFAULT_TAGS[2]], // Marketing
+    tags: [DEFAULT_TAGS[2]],
     description: 'Campaña de Amazon Ads para la serie de misterio',
     checklistItems: [
       { id: 'cl-1', text: 'Crear campaña', done: true },
@@ -137,6 +140,7 @@ export const MOCK_EVENTS: EditorialEvent[] = [
       { id: 'cl-4', text: 'Optimizar bids', done: true },
     ],
     reminders: [],
+    origin: 'local',
     createdAt: subDays(today, 20),
     updatedAt: subDays(today, 1),
   },
@@ -150,7 +154,7 @@ export const MOCK_EVENTS: EditorialEvent[] = [
     endAt: addDays(today, 3),
     allDay: true,
     bookIds: [],
-    tags: [DEFAULT_TAGS[3]], // Contenido
+    tags: [DEFAULT_TAGS[3]],
     description: 'Escribir y publicar artículo sobre técnicas de escritura',
     checklistItems: [
       { id: 'cl-1', text: 'Escribir borrador', done: false },
@@ -161,10 +165,10 @@ export const MOCK_EVENTS: EditorialEvent[] = [
     reminders: [
       { id: 'rem-1', offsetMinutes: 1440, channel: 'in_app', enabled: true },
     ],
+    origin: 'local',
     createdAt: subDays(today, 2),
     updatedAt: subDays(today, 1),
   },
-  // Past events
   {
     id: 'evt-7',
     type: 'user',
@@ -176,7 +180,7 @@ export const MOCK_EVENTS: EditorialEvent[] = [
     allDay: true,
     marketplace: ['ES', 'MX', 'US'],
     bookIds: ['book-2'],
-    tags: [DEFAULT_TAGS[0]], // Lanzamiento
+    tags: [DEFAULT_TAGS[0]],
     description: 'Lanzamiento completado exitosamente',
     checklistItems: [
       { id: 'cl-1', text: 'Publicar en todas las plataformas', done: true },
@@ -184,10 +188,10 @@ export const MOCK_EVENTS: EditorialEvent[] = [
       { id: 'cl-3', text: 'Activar ads', done: true },
     ],
     reminders: [],
+    origin: 'local',
     createdAt: subDays(today, 45),
     updatedAt: subDays(today, 15),
   },
-  // Future events
   {
     id: 'evt-8',
     type: 'user',
@@ -199,7 +203,7 @@ export const MOCK_EVENTS: EditorialEvent[] = [
     allDay: true,
     marketplace: ['ES'],
     bookIds: ['book-8'],
-    tags: [DEFAULT_TAGS[0], DEFAULT_TAGS[1]], // Lanzamiento, Promoción
+    tags: [DEFAULT_TAGS[0], DEFAULT_TAGS[1]],
     description: 'Activar pre-venta del nuevo libro',
     checklistItems: [
       { id: 'cl-1', text: 'Finalizar portada', done: false },
@@ -209,6 +213,7 @@ export const MOCK_EVENTS: EditorialEvent[] = [
     reminders: [
       { id: 'rem-1', offsetMinutes: 10080, channel: 'in_app', enabled: true },
     ],
+    origin: 'local',
     createdAt: subDays(today, 5),
     updatedAt: today,
   },
