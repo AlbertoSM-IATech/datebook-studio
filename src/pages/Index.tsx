@@ -1,9 +1,10 @@
-import { CalendarWidget } from '@/components/calendar';
+import { EditorialCalendarModule, UpcomingEventsBlock } from '@/components/calendar';
 import { Header } from '@/components/layout';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Calendar, TrendingUp, BookOpen, Bell } from 'lucide-react';
+import { TrendingUp, BookOpen, Bell, Calendar } from 'lucide-react';
 import { useEvents } from '@/hooks/useEvents';
 import { startOfMonth, endOfMonth } from 'date-fns';
+import { CalendarProvider } from '@/contexts/CalendarContext';
 
 const Index = () => {
   const { events } = useEvents();
@@ -19,21 +20,34 @@ const Index = () => {
     <div className="min-h-screen bg-background">
       <Header />
 
-      {/* Main Content */}
       <main className="container mx-auto px-4 py-8">
         <div className="mb-8">
           <h2 className="text-3xl font-heading font-bold mb-2">Bienvenido a Publify</h2>
           <p className="text-muted-foreground">Tu centro de control editorial. Orden, foco y control.</p>
         </div>
 
-        {/* Dashboard Grid - Inverted: Calendar left, Stats right */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* Left Column - Calendar Widget (now larger) */}
-          <div className="lg:col-span-2 space-y-6">
-            <CalendarWidget />
+        {/* Dashboard Grid */}
+        <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
+          {/* Left Column - Full Calendar Module (3 cols) */}
+          <div className="lg:col-span-3 space-y-6">
+            <Card className="overflow-hidden">
+              <CardHeader className="pb-2">
+                <CardTitle className="font-heading text-xl flex items-center gap-2">
+                  <Calendar className="h-5 w-5 text-primary" />
+                  Calendario Editorial
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="p-4">
+                <CalendarProvider>
+                  <div className="h-[600px]">
+                    <EditorialCalendarModule mode="embedded" initialView="month" />
+                  </div>
+                </CalendarProvider>
+              </CardContent>
+            </Card>
           </div>
 
-          {/* Right Column - Stats & Activity */}
+          {/* Right Column - Stats & Upcoming Events (1 col) */}
           <div className="space-y-6">
             {/* Events This Month Card */}
             <Card className="card-hover">
@@ -91,6 +105,11 @@ const Index = () => {
                 </div>
               </CardContent>
             </Card>
+
+            {/* Upcoming Events Block */}
+            <CalendarProvider>
+              <UpcomingEventsBlock maxEvents={5} showActions={true} />
+            </CalendarProvider>
           </div>
         </div>
       </main>

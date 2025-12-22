@@ -1,8 +1,11 @@
-export { EditorialCalendar } from './EditorialCalendar';
+export { EditorialCalendar, EditorialCalendarModule } from './EditorialCalendar';
 export { CalendarWidget } from './CalendarWidget';
-export { EventChip } from './EventChip';
-export { EventPanel } from './EventPanel';
 export { MonthlyView } from './MonthlyView';
 export { YearlyView } from './YearlyView';
-export { FilterPanel } from './FilterPanel';
+export { ListView } from './ListView';
+export { EventPanel } from './EventPanel';
+export { EventChip } from './EventChip';
 export { QuickCreateModal } from './QuickCreateModal';
+export { FilterPanel } from './FilterPanel';
+export { GoogleCalendarModal } from './GoogleCalendarModal';
+export { UpcomingEventsBlock } from './UpcomingEventsBlock';
