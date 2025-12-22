@@ -69,6 +69,10 @@ export function FilterPanel({ filters, onFiltersChange, onClose }: FilterPanelPr
       marketplaces: [],
       statuses: [],
       priorities: [],
+      bookIds: [],
+      assignedTo: [],
+      origin: [],
+      searchQuery: '',
     });
   };
 

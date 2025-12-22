@@ -26,6 +26,10 @@ function CalendarContent() {
     marketplaces: [],
     statuses: [],
     priorities: [],
+    bookIds: [],
+    assignedTo: [],
+    origin: [],
+    searchQuery: '',
   });
   const [showFilters, setShowFilters] = useState(false);
   

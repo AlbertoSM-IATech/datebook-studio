@@ -3,7 +3,7 @@ import {
   EditorialEvent, 
   EventFormData, 
   CalendarFilters,
-  DEFAULT_TAGS 
+  DEFAULT_FILTERS,
 } from '@/types/calendar';
 import { MOCK_EVENTS } from '@/data/mockData';
 import { SYSTEM_EVENTS, calculateDynamicDate } from '@/data/systemEvents';
@@ -11,10 +11,10 @@ import {
   startOfDay, 
   endOfDay, 
   isWithinInterval, 
-  isSameDay,
   startOfWeek,
   endOfWeek,
-  addDays 
+  startOfMonth,
+  endOfMonth,
 } from 'date-fns';
 
 // Generate system events for a given year
@@ -49,6 +49,7 @@ function generateSystemEventsForYear(year: number): EditorialEvent[] {
         description: template.description,
         checklistItems: [],
         reminders: template.defaultReminders,
+        origin: 'local' as const,
         createdAt: new Date(),
         updatedAt: new Date(),
       } as EditorialEvent;
@@ -74,7 +75,7 @@ export function useEvents() {
     return [...userEvents, ...systemEvents];
   }, [userEvents, systemEvents]);
 
-  // Filter events
+  // Filter events with full-text search
   const filterEvents = useCallback((
     events: EditorialEvent[],
     filters: CalendarFilters
@@ -83,6 +84,15 @@ export function useEvents() {
       // Type filter
       if (event.type === 'system' && !filters.showSystemEvents) return false;
       if (event.type === 'user' && !filters.showUserEvents) return false;
+
+      // Search query (full-text)
+      if (filters.searchQuery) {
+        const query = filters.searchQuery.toLowerCase();
+        const matchesTitle = event.title.toLowerCase().includes(query);
+        const matchesDescription = event.description.toLowerCase().includes(query);
+        const matchesTags = event.tags.some(t => t.name.toLowerCase().includes(query));
+        if (!matchesTitle && !matchesDescription && !matchesTags) return false;
+      }
 
       // Tag filter
       if (filters.tags.length > 0) {
@@ -103,6 +113,24 @@ export function useEvents() {
       // Priority filter
       if (filters.priorities.length > 0) {
         if (!filters.priorities.includes(event.priority)) return false;
+      }
+
+      // Book filter
+      if (filters.bookIds.length > 0) {
+        if (!filters.bookIds.some(bookId => event.bookIds.includes(bookId))) return false;
+      }
+
+      // Origin filter
+      if (filters.origin.length > 0) {
+        if (!filters.origin.includes(event.origin)) return false;
+      }
+
+      // Date range filter
+      if (filters.dateRange) {
+        const eventStart = startOfDay(event.startAt);
+        const rangeStart = startOfDay(filters.dateRange.from);
+        const rangeEnd = endOfDay(filters.dateRange.to);
+        if (eventStart < rangeStart || eventStart > rangeEnd) return false;
       }
 
       return true;
@@ -142,6 +170,16 @@ export function useEvents() {
       return isWithinInterval(targetDate, { start: eventStart, end: eventEnd });
     });
   }, [allEvents, filterEvents]);
+
+  // Get events for current month
+  const getEventsForMonth = useCallback((
+    month: Date,
+    filters?: CalendarFilters
+  ): EditorialEvent[] => {
+    const start = startOfMonth(month);
+    const end = endOfMonth(month);
+    return getEventsInRange(start, end, filters);
+  }, [getEventsInRange]);
 
   // Get upcoming events
   const getUpcomingEvents = useCallback((
@@ -185,13 +223,14 @@ export function useEvents() {
       description: data.description,
       checklistItems: data.checklistItems,
       reminders: data.reminders,
+      assignedTo: data.assignedTo,
+      origin: 'local',
       createdAt: new Date(),
       updatedAt: new Date(),
     };
 
     setUserEvents(prev => [...prev, newEvent]);
     
-    // Simulate save
     setSaveStatus('saving');
     setTimeout(() => setSaveStatus('saved'), 500);
     setTimeout(() => setSaveStatus('idle'), 2000);
@@ -212,7 +251,6 @@ export function useEvents() {
       return event;
     }));
 
-    // Simulate save
     setSaveStatus('saving');
     setTimeout(() => setSaveStatus('saved'), 500);
     setTimeout(() => setSaveStatus('idle'), 2000);
@@ -245,28 +283,66 @@ export function useEvents() {
     setTimeout(() => setSaveStatus('idle'), 2000);
   }, []);
 
-  // Duplicate system event as user event
-  const duplicateAsUserEvent = useCallback((systemEventId: string): EditorialEvent | null => {
-    const systemEvent = systemEvents.find(e => e.id === systemEventId);
-    if (!systemEvent) return null;
+  // Duplicate event
+  const duplicateEvent = useCallback((id: string): EditorialEvent | null => {
+    const event = allEvents.find(e => e.id === id);
+    if (!event) return null;
 
     const newEvent: EditorialEvent = {
-      ...systemEvent,
+      ...event,
       id: `evt-${Date.now()}`,
       type: 'user',
       systemKey: undefined,
-      title: `${systemEvent.title} (copia)`,
+      title: `${event.title} (copia)`,
+      origin: 'local',
+      googleEventId: undefined,
       createdAt: new Date(),
       updatedAt: new Date(),
     };
 
     setUserEvents(prev => [...prev, newEvent]);
     return newEvent;
-  }, [systemEvents]);
+  }, [allEvents]);
+
+  // Mark event as done
+  const markEventDone = useCallback((id: string): void => {
+    updateEvent(id, { status: 'done' });
+  }, [updateEvent]);
+
+  // Add imported events (from Google Calendar)
+  const addImportedEvents = useCallback((events: EditorialEvent[]): void => {
+    setUserEvents(prev => {
+      const existingGoogleIds = new Set(
+        prev.filter(e => e.googleEventId).map(e => e.googleEventId)
+      );
+      
+      const newEvents = events.filter(e => !existingGoogleIds.has(e.googleEventId));
+      const updatedEvents = events.filter(e => existingGoogleIds.has(e.googleEventId));
+      
+      let result = [...prev];
+      
+      // Update existing events
+      for (const updated of updatedEvents) {
+        result = result.map(e => 
+          e.googleEventId === updated.googleEventId 
+            ? { ...e, ...updated, updatedAt: new Date() }
+            : e
+        );
+      }
+      
+      // Add new events
+      return [...result, ...newEvents];
+    });
+  }, []);
 
   // Get event by ID
   const getEventById = useCallback((id: string): EditorialEvent | undefined => {
     return allEvents.find(event => event.id === id);
+  }, [allEvents]);
+
+  // Get events by book ID (for bidirectional relationship)
+  const getEventsByBookId = useCallback((bookId: string): EditorialEvent[] => {
+    return allEvents.filter(event => event.bookIds.includes(bookId));
   }, [allEvents]);
 
   return {
@@ -276,14 +352,18 @@ export function useEvents() {
     saveStatus,
     getEventsInRange,
     getEventsForDay,
+    getEventsForMonth,
     getUpcomingEvents,
     getThisWeekEvents,
     createEvent,
     updateEvent,
     deleteEvent,
     moveEvent,
-    duplicateAsUserEvent,
+    duplicateEvent,
+    markEventDone,
+    addImportedEvents,
     getEventById,
+    getEventsByBookId,
     filterEvents,
   };
 }
