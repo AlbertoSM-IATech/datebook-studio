@@ -1,11 +1,11 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Badge } from '@/components/ui/badge';
-import { Separator } from '@/components/ui/separator';
+import { ScrollArea } from '@/components/ui/scroll-area';
 import { 
   Plus, 
   Filter, 
@@ -21,7 +21,7 @@ import { CalendarProvider, useCalendarContext } from '@/contexts/CalendarContext
 import { useEvents } from '@/hooks/useEvents';
 import { useReminders } from '@/hooks/useReminders';
 import { useGoogleCalendar } from '@/hooks/useGoogleCalendar';
-import { MonthlyView } from './MonthlyView';
+import { MonthlyView } from './MonthlyViewLegacy';
 import { YearlyView } from './YearlyView';
 import { ListView } from './ListView';
 import { EventPanel } from './EventPanel';
@@ -46,6 +46,13 @@ function CalendarContent({ mode = 'page', initialView = 'month' }: EditorialCale
   const [showGoogleModal, setShowGoogleModal] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   
+  // Set initial view mode
+  useEffect(() => {
+    if (initialView) {
+      setViewMode(initialView);
+    }
+  }, [initialView, setViewMode]);
+  
   useReminders(events);
 
   const handleQuickCreate = () => {
@@ -56,6 +63,7 @@ function CalendarContent({ mode = 'page', initialView = 'month' }: EditorialCale
   const activeFiltersCount = [
     !localFilters.showSystemEvents,
     !localFilters.showUserEvents,
+    !localFilters.showKanbanEvents,
     localFilters.tags.length > 0,
     localFilters.statuses.length > 0,
     localFilters.priorities.length > 0,
@@ -72,11 +80,15 @@ function CalendarContent({ mode = 'page', initialView = 'month' }: EditorialCale
   const isEmbedded = mode === 'embedded';
 
   return (
-    <div className={cn('flex flex-col h-full', isEmbedded && 'min-h-[500px]')}>
-      {/* Header/Toolbar */}
+    <div className={cn(
+      'flex flex-col',
+      // Dynamic height based on mode
+      isEmbedded ? 'min-h-[500px]' : 'h-full',
+    )}>
+      {/* Header/Toolbar - Sticky in embedded mode */}
       <div className={cn(
         'flex items-center justify-between gap-4 flex-wrap',
-        isEmbedded ? 'mb-4' : 'mb-6'
+        isEmbedded ? 'mb-4 sticky top-0 z-20 bg-card pb-2' : 'mb-6'
       )}>
         <div className="flex items-center gap-4">
           {!isEmbedded && (
@@ -183,11 +195,21 @@ function CalendarContent({ mode = 'page', initialView = 'month' }: EditorialCale
         </div>
       </div>
 
-      {/* Calendar View */}
-      <div className="flex-1 min-h-0">
-        {viewMode === 'month' && <MonthlyView filters={filtersWithSearch} />}
+      {/* Calendar View - Dynamic height based on view type */}
+      <div className={cn(
+        'flex-1',
+        // For list view in embedded mode, allow internal scroll
+        viewMode === 'list' && isEmbedded && 'max-h-[600px] overflow-hidden',
+        // For month/year views, let them expand naturally
+        viewMode !== 'list' && 'min-h-0'
+      )}>
+        {viewMode === 'month' && <MonthlyView filters={filtersWithSearch} legacyStyle={isEmbedded} />}
         {viewMode === 'year' && <YearlyView filters={filtersWithSearch} />}
-        {viewMode === 'list' && <ListView filters={filtersWithSearch} />}
+        {viewMode === 'list' && (
+          <div className={cn(isEmbedded ? 'h-full' : 'h-full')}>
+            <ListView filters={filtersWithSearch} />
+          </div>
+        )}
       </div>
 
       {/* Event Panel */}

@@ -104,6 +104,7 @@ export type CalendarModuleMode = 'embedded' | 'page';
 export interface CalendarFilters {
   showSystemEvents: boolean;
   showUserEvents: boolean;
+  showKanbanEvents: boolean; // New filter for book kanban items
   tags: string[];
   marketplaces: Marketplace[];
   statuses: EventStatus[];
