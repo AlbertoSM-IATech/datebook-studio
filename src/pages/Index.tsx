@@ -29,8 +29,8 @@ const Index = () => {
         {/* Dashboard Grid */}
         <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
           {/* Left Column - Full Calendar Module (3 cols) */}
-          <div className="lg:col-span-3 space-y-6">
-            <Card className="overflow-hidden">
+          <div className="lg:col-span-3">
+            <Card className="overflow-visible">
               <CardHeader className="pb-2">
                 <CardTitle className="font-heading text-xl flex items-center gap-2">
                   <Calendar className="h-5 w-5 text-primary" />
@@ -39,7 +39,8 @@ const Index = () => {
               </CardHeader>
               <CardContent className="p-4">
                 <CalendarProvider>
-                  <div className="h-[600px]">
+                  {/* Dynamic height container - no fixed height, adapts to content */}
+                  <div className="min-h-[500px]">
                     <EditorialCalendarModule mode="embedded" initialView="month" />
                   </div>
                 </CalendarProvider>
