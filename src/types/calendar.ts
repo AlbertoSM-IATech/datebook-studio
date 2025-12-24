@@ -244,10 +244,53 @@ export const DEFAULT_TAGS: Tag[] = [
   { id: 'meeting', name: 'Reunión', color: 'hsl(38 92% 50%)' },
 ];
 
+// Calendar Source Type (for unified calendar items)
+export type CalendarSourceType = 'calendarEvent' | 'bookKanban';
+
+// Calendar Source
+export interface CalendarSource {
+  id: string;
+  type: CalendarSourceType;
+  name: string;
+  enabledByDefault: boolean;
+}
+
+// Unified Calendar Item (can be from events or kanban)
+export interface CalendarItem {
+  id: string;
+  sourceType: CalendarSourceType;
+  sourceId: string;
+  title: string;
+  startAt: Date;
+  endAt: Date;
+  allDay: boolean;
+  status: EventStatus;
+  priority: EventPriority;
+  bookIds: string[];
+  tags: Tag[];
+  linkToBookId?: string;
+  linkToKanbanItemId?: string;
+  description?: string;
+}
+
+// Book Kanban Item (from library)
+export interface BookKanbanItem {
+  id: string;
+  bookId: string;
+  title: string;
+  status: string;
+  priority?: EventPriority;
+  dueDate?: Date;
+  startDate?: Date;
+  description?: string;
+  tags?: Tag[];
+}
+
 // Default filters
 export const DEFAULT_FILTERS: CalendarFilters = {
   showSystemEvents: true,
   showUserEvents: true,
+  showKanbanEvents: true,
   tags: [],
   marketplaces: [],
   statuses: [],

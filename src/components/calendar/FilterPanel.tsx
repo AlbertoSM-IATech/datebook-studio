@@ -65,6 +65,7 @@ export function FilterPanel({ filters, onFiltersChange, onClose }: FilterPanelPr
     onFiltersChange({
       showSystemEvents: true,
       showUserEvents: true,
+      showKanbanEvents: true,
       tags: [],
       marketplaces: [],
       statuses: [],
