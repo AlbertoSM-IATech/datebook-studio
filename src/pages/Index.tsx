@@ -39,8 +39,8 @@ const Index = () => {
               </CardHeader>
               <CardContent className="p-4">
                 <CalendarProvider>
-                  {/* Dynamic height container - no fixed height, adapts to content */}
-                  <div className="min-h-[500px]">
+                  {/* Dynamic height container - adapts to content, no clipping */}
+                  <div className="w-full">
                     <EditorialCalendarModule mode="embedded" initialView="month" />
                   </div>
                 </CalendarProvider>

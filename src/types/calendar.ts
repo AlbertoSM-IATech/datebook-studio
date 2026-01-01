@@ -17,8 +17,11 @@ export type ReminderChannel = 'in_app' | 'email' | 'push';
 // Marketplace
 export type Marketplace = 'ES' | 'US' | 'DE' | 'FR' | 'IT' | 'UK' | 'CA' | 'AU' | 'MX' | 'BR' | 'JP';
 
-// Event Origin
-export type EventOrigin = 'local' | 'google';
+// Event Origin - Extended to include all sources
+export type EventOrigin = 'local' | 'google' | 'kanban' | 'book';
+
+// Calendar Source Type (for unified calendar items)
+export type CalendarSourceType = 'calendar' | 'google' | 'kanban' | 'book';
 
 // Checklist Item
 export interface ChecklistItem {
@@ -71,6 +74,7 @@ export interface EditorialEvent {
   reminders: Reminder[];
   assignedTo?: string;
   origin: EventOrigin;
+  sourceType?: CalendarSourceType;
   googleEventId?: string;
   googleCalendarId?: string;
   syncedAt?: Date;
@@ -100,11 +104,13 @@ export type CalendarViewMode = 'month' | 'year' | 'list';
 // Calendar Module Mode
 export type CalendarModuleMode = 'embedded' | 'page';
 
-// Filter State
+// Filter State - Extended with all source filters
 export interface CalendarFilters {
   showSystemEvents: boolean;
   showUserEvents: boolean;
-  showKanbanEvents: boolean; // New filter for book kanban items
+  showGoogleEvents: boolean;
+  showKanbanEvents: boolean;
+  showBookEvents: boolean;
   tags: string[];
   marketplaces: Marketplace[];
   statuses: EventStatus[];
@@ -244,16 +250,22 @@ export const DEFAULT_TAGS: Tag[] = [
   { id: 'meeting', name: 'Reunión', color: 'hsl(38 92% 50%)' },
 ];
 
-// Calendar Source Type (for unified calendar items)
-export type CalendarSourceType = 'calendarEvent' | 'bookKanban';
-
 // Calendar Source
 export interface CalendarSource {
   id: string;
   type: CalendarSourceType;
   name: string;
   enabledByDefault: boolean;
+  icon?: string;
 }
+
+// Available Calendar Sources
+export const CALENDAR_SOURCES: CalendarSource[] = [
+  { id: 'calendar', type: 'calendar', name: 'Eventos del calendario', enabledByDefault: true, icon: 'Calendar' },
+  { id: 'google', type: 'google', name: 'Google Calendar', enabledByDefault: true, icon: 'Cloud' },
+  { id: 'kanban', type: 'kanban', name: 'Kanban de libros', enabledByDefault: true, icon: 'Kanban' },
+  { id: 'book', type: 'book', name: 'Eventos de libros', enabledByDefault: true, icon: 'Book' },
+];
 
 // Unified Calendar Item (can be from events or kanban)
 export interface CalendarItem {
@@ -290,7 +302,9 @@ export interface BookKanbanItem {
 export const DEFAULT_FILTERS: CalendarFilters = {
   showSystemEvents: true,
   showUserEvents: true,
+  showGoogleEvents: true,
   showKanbanEvents: true,
+  showBookEvents: true,
   tags: [],
   marketplaces: [],
   statuses: [],
@@ -312,6 +326,6 @@ export const DEFAULT_LIST_COLUMNS: ListViewColumn[] = [
   { key: 'marketplace', label: 'Mercado', visible: true, sortable: false, width: '100px' },
   { key: 'bookIds', label: 'Libros', visible: true, sortable: false, width: '150px' },
   { key: 'tags', label: 'Etiquetas', visible: true, sortable: false, width: '150px' },
-  { key: 'type', label: 'Fuente', visible: true, sortable: true, width: '90px' },
-  { key: 'origin', label: 'Origen', visible: false, sortable: true, width: '90px' },
+  { key: 'type', label: 'Tipo', visible: true, sortable: true, width: '90px' },
+  { key: 'origin', label: 'Origen', visible: true, sortable: true, width: '90px' },
 ];

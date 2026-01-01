@@ -6,7 +6,6 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Checkbox } from '@/components/ui/checkbox';
-import { ScrollArea } from '@/components/ui/scroll-area';
 import {
   Table,
   TableBody,
@@ -22,6 +21,11 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from '@/components/ui/tooltip';
+import {
   Search,
   ArrowUpDown,
   ArrowUp,
@@ -34,6 +38,10 @@ import {
   ChevronLeft,
   ChevronRight,
   Columns,
+  Cloud,
+  Kanban,
+  BookOpen,
+  Calendar,
 } from 'lucide-react';
 import { useCalendarContext } from '@/contexts/CalendarContext';
 import { useEvents } from '@/hooks/useEvents';
@@ -103,6 +111,9 @@ export function ListView({ filters }: ListViewProps) {
         case 'type':
           comparison = a.type.localeCompare(b.type);
           break;
+        case 'origin':
+          comparison = a.origin.localeCompare(b.origin);
+          break;
         default:
           comparison = 0;
       }
@@ -167,11 +178,29 @@ export function ListView({ filters }: ListViewProps) {
       : <ArrowDown className="h-4 w-4" />;
   };
 
+  const getOriginIcon = (origin: string) => {
+    switch (origin) {
+      case 'google': return <Cloud className="h-3.5 w-3.5 text-blue-500" />;
+      case 'kanban': return <Kanban className="h-3.5 w-3.5 text-purple-500" />;
+      case 'book': return <BookOpen className="h-3.5 w-3.5 text-orange-500" />;
+      default: return <Calendar className="h-3.5 w-3.5 text-primary" />;
+    }
+  };
+
+  const getOriginLabel = (origin: string) => {
+    switch (origin) {
+      case 'google': return 'Google';
+      case 'kanban': return 'Kanban';
+      case 'book': return 'Libro';
+      default: return 'Local';
+    }
+  };
+
   const renderCellContent = (event: EditorialEvent, column: ListViewColumn) => {
     switch (column.key) {
       case 'startAt':
         return (
-          <span className="text-sm">
+          <span className="text-sm whitespace-nowrap">
             {format(event.startAt, 'dd MMM yyyy', { locale: es })}
             {!event.allDay && <span className="text-muted-foreground"> {format(event.startAt, 'HH:mm')}</span>}
           </span>
@@ -179,25 +208,35 @@ export function ListView({ filters }: ListViewProps) {
       
       case 'endAt':
         return (
-          <span className="text-sm">
+          <span className="text-sm whitespace-nowrap">
             {format(event.endAt, 'dd MMM yyyy', { locale: es })}
           </span>
         );
       
       case 'title':
         return (
-          <button 
-            onClick={() => handleOpenEvent(event)}
-            className="text-left font-medium hover:text-primary transition-colors"
-          >
-            {event.title}
-          </button>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <button 
+                onClick={() => handleOpenEvent(event)}
+                className="text-left font-medium hover:text-primary transition-colors truncate max-w-[200px] block"
+              >
+                {event.title}
+              </button>
+            </TooltipTrigger>
+            <TooltipContent side="top" className="max-w-xs">
+              <p>{event.title}</p>
+              {event.description && (
+                <p className="text-xs text-muted-foreground mt-1 line-clamp-2">{event.description}</p>
+              )}
+            </TooltipContent>
+          </Tooltip>
         );
       
       case 'status':
         const statusConfig = STATUS_CONFIG[event.status];
         return (
-          <Badge variant="outline" className={cn('text-xs', statusConfig.bgClass)}>
+          <Badge variant="outline" className={cn('text-xs whitespace-nowrap', statusConfig.bgClass)}>
             {statusConfig.label}
           </Badge>
         );
@@ -205,7 +244,7 @@ export function ListView({ filters }: ListViewProps) {
       case 'priority':
         const priorityConfig = PRIORITY_CONFIG[event.priority];
         return (
-          <Badge variant="outline" className={cn('text-xs', priorityConfig.bgClass)}>
+          <Badge variant="outline" className={cn('text-xs whitespace-nowrap', priorityConfig.bgClass)}>
             {priorityConfig.label}
           </Badge>
         );
@@ -216,9 +255,9 @@ export function ListView({ filters }: ListViewProps) {
       case 'marketplace':
         if (!event.marketplace?.length) return <span className="text-muted-foreground">—</span>;
         return (
-          <div className="flex gap-1">
+          <div className="flex gap-1 flex-nowrap">
             {event.marketplace.slice(0, 2).map(m => (
-              <Badge key={m} variant="outline" className="text-xs px-1">
+              <Badge key={m} variant="outline" className="text-xs px-1 whitespace-nowrap">
                 {m}
               </Badge>
             ))}
@@ -234,54 +273,83 @@ export function ListView({ filters }: ListViewProps) {
         const books = getBooksByIds(event.bookIds);
         if (!books.length) return <span className="text-muted-foreground">—</span>;
         return (
-          <div className="flex gap-1 flex-wrap">
-            {books.slice(0, 1).map(book => (
-              <Badge key={book.id} variant="secondary" className="text-xs truncate max-w-[100px]">
-                {book.title}
-              </Badge>
-            ))}
-            {books.length > 1 && (
-              <Badge variant="secondary" className="text-xs">
-                +{books.length - 1}
-              </Badge>
-            )}
-          </div>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <div className="flex gap-1 flex-nowrap">
+                {books.slice(0, 1).map(book => (
+                  <Badge key={book.id} variant="secondary" className="text-xs truncate max-w-[80px]">
+                    {book.title}
+                  </Badge>
+                ))}
+                {books.length > 1 && (
+                  <Badge variant="secondary" className="text-xs">
+                    +{books.length - 1}
+                  </Badge>
+                )}
+              </div>
+            </TooltipTrigger>
+            <TooltipContent side="top">
+              <ul className="text-xs space-y-1">
+                {books.map(book => (
+                  <li key={book.id}>📚 {book.title}</li>
+                ))}
+              </ul>
+            </TooltipContent>
+          </Tooltip>
         );
       
       case 'tags':
         if (!event.tags.length) return <span className="text-muted-foreground">—</span>;
         return (
-          <div className="flex gap-1 flex-wrap">
-            {event.tags.slice(0, 2).map(tag => (
-              <Badge 
-                key={tag.id} 
-                variant="outline" 
-                className="text-xs"
-                style={{ borderColor: tag.color, color: tag.color }}
-              >
-                {tag.name}
-              </Badge>
-            ))}
-            {event.tags.length > 2 && (
-              <Badge variant="outline" className="text-xs">
-                +{event.tags.length - 2}
-              </Badge>
-            )}
-          </div>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <div className="flex gap-1 flex-nowrap">
+                {event.tags.slice(0, 2).map(tag => (
+                  <Badge 
+                    key={tag.id} 
+                    variant="outline" 
+                    className="text-xs whitespace-nowrap"
+                    style={{ borderColor: tag.color, color: tag.color }}
+                  >
+                    {tag.name}
+                  </Badge>
+                ))}
+                {event.tags.length > 2 && (
+                  <Badge variant="outline" className="text-xs">
+                    +{event.tags.length - 2}
+                  </Badge>
+                )}
+              </div>
+            </TooltipTrigger>
+            <TooltipContent side="top">
+              <div className="flex flex-wrap gap-1">
+                {event.tags.map(tag => (
+                  <span 
+                    key={tag.id} 
+                    className="text-xs px-1 rounded"
+                    style={{ backgroundColor: `${tag.color}20`, color: tag.color }}
+                  >
+                    {tag.name}
+                  </span>
+                ))}
+              </div>
+            </TooltipContent>
+          </Tooltip>
         );
       
       case 'type':
         return (
-          <Badge variant={event.type === 'system' ? 'secondary' : 'outline'} className="text-xs">
+          <Badge variant={event.type === 'system' ? 'secondary' : 'outline'} className="text-xs whitespace-nowrap">
             {event.type === 'system' ? 'Sistema' : 'Usuario'}
           </Badge>
         );
       
       case 'origin':
         return (
-          <Badge variant="outline" className="text-xs">
-            {event.origin === 'google' ? 'Google' : 'Local'}
-          </Badge>
+          <div className="flex items-center gap-1.5">
+            {getOriginIcon(event.origin)}
+            <span className="text-xs">{getOriginLabel(event.origin)}</span>
+          </div>
         );
       
       default:
@@ -307,7 +375,7 @@ export function ListView({ filters }: ListViewProps) {
         </div>
 
         <div className="flex items-center gap-2">
-          <span className="text-sm text-muted-foreground">
+          <span className="text-sm text-muted-foreground whitespace-nowrap">
             {filteredEvents.length} eventos
           </span>
 
@@ -316,7 +384,7 @@ export function ListView({ filters }: ListViewProps) {
             <DropdownMenuTrigger asChild>
               <Button variant="outline" size="sm" className="gap-2">
                 <Columns className="h-4 w-4" />
-                Columnas
+                <span className="hidden sm:inline">Columnas</span>
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
@@ -335,10 +403,10 @@ export function ListView({ filters }: ListViewProps) {
         </div>
       </div>
 
-      {/* Table */}
+      {/* Table with horizontal scroll */}
       <div className="flex-1 border rounded-lg overflow-hidden">
-        <ScrollArea className="h-full">
-          <Table>
+        <div className="overflow-x-auto h-full">
+          <Table className="min-w-[900px]">
             <TableHeader className="sticky top-0 bg-card z-10">
               <TableRow>
                 <TableHead className="w-[40px]">
@@ -351,9 +419,16 @@ export function ListView({ filters }: ListViewProps) {
                 {visibleColumns.map(col => (
                   <TableHead 
                     key={col.key}
-                    style={{ width: col.width }}
-                    className={col.sortable ? 'cursor-pointer select-none' : ''}
+                    style={{ width: col.width, minWidth: col.width }}
+                    className={cn(
+                      col.sortable ? 'cursor-pointer select-none' : '',
+                      'whitespace-nowrap'
+                    )}
                     onClick={() => col.sortable && handleSort(col.key)}
+                    aria-sort={sortState.column === col.key 
+                      ? sortState.direction === 'asc' ? 'ascending' : 'descending'
+                      : undefined
+                    }
                   >
                     <div className="flex items-center gap-1">
                       {col.label}
@@ -391,7 +466,7 @@ export function ListView({ filters }: ListViewProps) {
                       />
                     </TableCell>
                     {visibleColumns.map(col => (
-                      <TableCell key={col.key}>
+                      <TableCell key={col.key} className="py-2">
                         {renderCellContent(event, col)}
                       </TableCell>
                     ))}
@@ -439,7 +514,7 @@ export function ListView({ filters }: ListViewProps) {
               )}
             </TableBody>
           </Table>
-        </ScrollArea>
+        </div>
       </div>
 
       {/* Pagination */}

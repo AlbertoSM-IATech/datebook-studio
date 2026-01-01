@@ -17,11 +17,10 @@ import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from '@/components/ui/sheet';
-import { ChevronLeft, ChevronRight, Calendar as CalendarIcon, Plus, GripVertical } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Calendar as CalendarIcon, Plus, Cloud, Kanban, BookOpen } from 'lucide-react';
 import { useCalendarContext } from '@/contexts/CalendarContext';
 import { useEvents } from '@/hooks/useEvents';
 import { useBooks } from '@/hooks/useBooks';
-import { EventChip } from './EventChip';
 import { EditorialEvent, CalendarFilters, STATUS_CONFIG, PRIORITY_CONFIG } from '@/types/calendar';
 
 const WEEKDAYS = ['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom'];
@@ -43,6 +42,15 @@ function DayEventsSheet({ date, events, onClose, onEventClick, onCreateEvent }: 
   const { getBooksByIds } = useBooks();
   
   if (!date) return null;
+
+  const getOriginIcon = (origin: string) => {
+    switch (origin) {
+      case 'google': return <Cloud className="h-3 w-3 text-blue-500" />;
+      case 'kanban': return <Kanban className="h-3 w-3 text-purple-500" />;
+      case 'book': return <BookOpen className="h-3 w-3 text-orange-500" />;
+      default: return <CalendarIcon className="h-3 w-3 text-primary" />;
+    }
+  };
 
   return (
     <Sheet open={!!date} onOpenChange={() => onClose()}>
@@ -91,7 +99,10 @@ function DayEventsSheet({ date, events, onClose, onEventClick, onCreateEvent }: 
                     >
                       <div className="flex items-start justify-between gap-2">
                         <div className="flex-1 min-w-0">
-                          <p className="font-medium truncate">{event.title}</p>
+                          <div className="flex items-center gap-2">
+                            {getOriginIcon(event.origin)}
+                            <p className="font-medium truncate">{event.title}</p>
+                          </div>
                           {!event.allDay && (
                             <p className="text-xs text-muted-foreground mt-0.5">
                               {format(event.startAt, 'HH:mm')} - {format(event.endAt, 'HH:mm')}
@@ -174,6 +185,9 @@ export function MonthlyView({ filters, legacyStyle = false }: MonthlyViewProps) 
     return eachDayOfInterval({ start: calendarStart, end: calendarEnd });
   }, [calendarStart, calendarEnd]);
 
+  // Calculate number of weeks for proper grid sizing
+  const numWeeks = Math.ceil(days.length / 7);
+
   const navigateMonth = (direction: 'prev' | 'next') => {
     setSelectedDate(direction === 'prev' ? subMonths(selectedDate, 1) : addMonths(selectedDate, 1));
   };
@@ -186,11 +200,9 @@ export function MonthlyView({ filters, legacyStyle = false }: MonthlyViewProps) 
     const dayEvents = filterEvents(getEventsForDay(day), filters);
     
     if (legacyStyle) {
-      // In legacy style, open sheet with day details
       setSelectedDaySheet(day);
       setDaySheetEvents(dayEvents);
     } else {
-      // Original behavior: if no events, quick create
       if (dayEvents.length === 0) {
         setQuickCreateDate(day);
         setIsQuickCreateOpen(true);
@@ -244,7 +256,17 @@ export function MonthlyView({ filters, legacyStyle = false }: MonthlyViewProps) 
     setDragOverDay(null);
   }, [draggedEvent, moveEvent]);
 
-  // Legacy widget style (dark, compact, numeric indicators)
+  // Check for events from different sources
+  const getSourceIndicators = (dayEvents: EditorialEvent[]) => {
+    const hasSystem = dayEvents.some(e => e.type === 'system');
+    const hasUser = dayEvents.some(e => e.type === 'user' && e.origin === 'local');
+    const hasGoogle = dayEvents.some(e => e.origin === 'google');
+    const hasKanban = dayEvents.some(e => e.origin === 'kanban');
+    const hasBook = dayEvents.some(e => e.origin === 'book');
+    return { hasSystem, hasUser, hasGoogle, hasKanban, hasBook };
+  };
+
+  // Legacy widget style (dark, compact, numeric indicators, SQUARE DAYS)
   if (legacyStyle) {
     return (
       <div className="flex flex-col h-full">
@@ -281,7 +303,7 @@ export function MonthlyView({ filters, legacyStyle = false }: MonthlyViewProps) 
           </div>
         </div>
 
-        {/* Calendar Grid - Legacy Style */}
+        {/* Calendar Grid - Legacy Style with Square Days */}
         <div className="flex-1 flex flex-col">
           {/* Weekday Headers */}
           <div className="grid grid-cols-7 gap-1 mb-1">
@@ -295,8 +317,11 @@ export function MonthlyView({ filters, legacyStyle = false }: MonthlyViewProps) 
             ))}
           </div>
 
-          {/* Days Grid - Legacy Card Style */}
-          <div className="grid grid-cols-7 gap-1 flex-1">
+          {/* Days Grid - Square cells with aspect-ratio */}
+          <div 
+            className="grid grid-cols-7 gap-1 flex-1"
+            style={{ gridTemplateRows: `repeat(${numWeeks}, 1fr)` }}
+          >
             {days.map((day) => {
               const dayEvents = filterEvents(getEventsForDay(day), filters);
               const eventCount = dayEvents.length;
@@ -304,14 +329,13 @@ export function MonthlyView({ filters, legacyStyle = false }: MonthlyViewProps) 
               const isSelected = isSameDay(day, selectedDate);
               const isTodayDate = isToday(day);
               const isDragOver = dragOverDay && isSameDay(day, dragOverDay);
-              const hasSystemEvent = dayEvents.some(e => e.type === 'system');
-              const hasUserEvent = dayEvents.some(e => e.type === 'user');
+              const sources = getSourceIndicators(dayEvents);
 
               return (
                 <div
                   key={day.toISOString()}
                   className={cn(
-                    'relative min-h-[60px] p-1.5 rounded-md border transition-all cursor-pointer',
+                    'relative aspect-square p-1.5 rounded-md border transition-all cursor-pointer',
                     // Legacy dark card style
                     'bg-muted/40 border-border/30 hover:bg-muted/60 hover:border-border/50',
                     !isCurrentMonth && 'opacity-30',
@@ -347,14 +371,23 @@ export function MonthlyView({ filters, legacyStyle = false }: MonthlyViewProps) 
 
                   {/* Event Indicator - Numeric Badge */}
                   {eventCount > 0 && (
-                    <div className="absolute bottom-1.5 right-1.5 flex items-center gap-0.5">
+                    <div className="absolute bottom-1 right-1 flex items-center gap-0.5">
                       {/* Source indicators */}
-                      <div className="flex gap-0.5">
-                        {hasSystemEvent && (
-                          <div className="w-1.5 h-1.5 rounded-full bg-accent" title="Evento del sistema" />
+                      <div className="flex gap-0.5 mr-0.5">
+                        {sources.hasSystem && (
+                          <div className="w-1.5 h-1.5 rounded-full bg-accent" title="Sistema" />
                         )}
-                        {hasUserEvent && (
-                          <div className="w-1.5 h-1.5 rounded-full bg-primary" title="Evento personal" />
+                        {sources.hasUser && (
+                          <div className="w-1.5 h-1.5 rounded-full bg-primary" title="Personal" />
+                        )}
+                        {sources.hasGoogle && (
+                          <div className="w-1.5 h-1.5 rounded-full bg-blue-500" title="Google" />
+                        )}
+                        {sources.hasKanban && (
+                          <div className="w-1.5 h-1.5 rounded-full bg-purple-500" title="Kanban" />
+                        )}
+                        {sources.hasBook && (
+                          <div className="w-1.5 h-1.5 rounded-full bg-orange-500" title="Libro" />
                         )}
                       </div>
                       {/* Count badge */}
@@ -396,7 +429,7 @@ export function MonthlyView({ filters, legacyStyle = false }: MonthlyViewProps) 
     );
   }
 
-  // Original style with event chips
+  // Original style with event chips (full page mode)
   return (
     <div className="flex flex-col h-full">
       {/* Header */}
@@ -445,7 +478,10 @@ export function MonthlyView({ filters, legacyStyle = false }: MonthlyViewProps) 
         </div>
 
         {/* Days Grid */}
-        <div className="grid grid-cols-7 gap-1 flex-1">
+        <div 
+          className="grid grid-cols-7 gap-1 flex-1"
+          style={{ gridTemplateRows: `repeat(${numWeeks}, 1fr)` }}
+        >
           {days.map((day) => {
             const dayEvents = filterEvents(getEventsForDay(day), filters);
             const isCurrentMonth = isSameMonth(day, selectedDate);
@@ -457,7 +493,7 @@ export function MonthlyView({ filters, legacyStyle = false }: MonthlyViewProps) 
               <div
                 key={day.toISOString()}
                 className={cn(
-                  'min-h-[120px] p-2 rounded-lg border border-border/50 transition-all cursor-pointer',
+                  'min-h-[100px] p-2 rounded-lg border border-border/50 transition-all cursor-pointer',
                   'hover:border-primary/50 hover:bg-primary/5',
                   !isCurrentMonth && 'opacity-40 bg-muted/30',
                   isSelected && 'ring-2 ring-primary border-primary',
@@ -468,50 +504,57 @@ export function MonthlyView({ filters, legacyStyle = false }: MonthlyViewProps) 
                 onDragOver={(e) => handleDragOver(e, day)}
                 onDragLeave={handleDragLeave}
                 onDrop={(e) => handleDrop(e, day)}
+                role="button"
+                tabIndex={0}
+                aria-label={`${format(day, "d 'de' MMMM", { locale: es })}${dayEvents.length > 0 ? `, ${dayEvents.length} eventos` : ''}`}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' || e.key === ' ') {
+                    handleDayClick(day);
+                  }
+                }}
               >
                 <div className="flex items-center justify-between mb-1">
                   <span
                     className={cn(
                       'text-sm font-medium',
-                      isTodayDate && 'bg-primary text-primary-foreground rounded-full w-6 h-6 flex items-center justify-center',
-                      !isTodayDate && !isCurrentMonth && 'text-muted-foreground'
+                      isTodayDate && 'bg-primary text-primary-foreground rounded-full w-7 h-7 flex items-center justify-center',
+                      !isTodayDate && !isCurrentMonth && 'text-muted-foreground/50'
                     )}
                   >
                     {format(day, 'd')}
                   </span>
-                  {dayEvents.length > 3 && (
-                    <span className="text-xs text-muted-foreground">+{dayEvents.length - 3}</span>
-                  )}
                 </div>
-                <div className="space-y-1">
-                  {dayEvents.slice(0, 3).map((event) => (
-                    <div
-                      key={event.id}
-                      draggable={event.type !== 'system'}
-                      onDragStart={(e) => handleDragStart(e, event)}
-                      onDragEnd={handleDragEnd}
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handleEventClick(event);
-                      }}
-                      className={cn(
-                        'group relative',
-                        event.type !== 'system' && 'cursor-grab active:cursor-grabbing'
-                      )}
-                    >
-                      {event.type !== 'system' && (
-                        <div className="absolute left-0 top-1/2 -translate-y-1/2 -translate-x-1 opacity-0 group-hover:opacity-50 transition-opacity">
-                          <GripVertical className="h-3 w-3 text-muted-foreground" />
-                        </div>
-                      )}
-                      <EventChip
-                        event={event}
-                        compact
-                        isDragging={draggedEvent?.id === event.id}
-                      />
-                    </div>
-                  ))}
-                </div>
+
+                {dayEvents.length > 0 && (
+                  <div className="space-y-1">
+                    {dayEvents.slice(0, 3).map((event) => (
+                      <div
+                        key={event.id}
+                        draggable={event.type !== 'system'}
+                        onDragStart={(e) => handleDragStart(e, event)}
+                        onDragEnd={handleDragEnd}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleEventClick(event);
+                        }}
+                        className={cn(
+                          'text-[10px] px-1.5 py-0.5 rounded truncate cursor-pointer',
+                          'hover:ring-1 hover:ring-primary transition-all',
+                          event.type === 'system' 
+                            ? 'bg-accent/20 text-accent-foreground'
+                            : 'bg-primary/20 text-primary-foreground'
+                        )}
+                      >
+                        {event.title}
+                      </div>
+                    ))}
+                    {dayEvents.length > 3 && (
+                      <span className="text-[10px] text-muted-foreground">
+                        +{dayEvents.length - 3} más
+                      </span>
+                    )}
+                  </div>
+                )}
               </div>
             );
           })}
