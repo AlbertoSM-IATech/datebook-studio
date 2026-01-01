@@ -18,7 +18,7 @@ import {
 import { es } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
-import { ChevronLeft, ChevronRight, Plus, X } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Plus, Cloud, Kanban, BookOpen, Calendar as CalendarIcon } from 'lucide-react';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from '@/components/ui/sheet';
 import { Badge } from '@/components/ui/badge';
 import {
@@ -28,6 +28,7 @@ import {
 } from '@/components/ui/tooltip';
 import { useCalendarContext } from '@/contexts/CalendarContext';
 import { useEvents } from '@/hooks/useEvents';
+import { useBooks } from '@/hooks/useBooks';
 import { CalendarFilters, EditorialEvent, STATUS_CONFIG, PRIORITY_CONFIG } from '@/types/calendar';
 
 const WEEKDAYS_SHORT = ['L', 'M', 'X', 'J', 'V', 'S', 'D'];
@@ -42,10 +43,22 @@ interface DayPanelProps {
   onClose: () => void;
   onEventClick: (event: EditorialEvent) => void;
   onCreateEvent: (date: Date) => void;
+  onViewMonth: (date: Date) => void;
 }
 
-function DayPanel({ date, events, onClose, onEventClick, onCreateEvent }: DayPanelProps) {
+function DayPanel({ date, events, onClose, onEventClick, onCreateEvent, onViewMonth }: DayPanelProps) {
+  const { getBooksByIds } = useBooks();
+  
   if (!date) return null;
+
+  const getOriginIcon = (origin: string) => {
+    switch (origin) {
+      case 'google': return <Cloud className="h-3 w-3 text-blue-500" />;
+      case 'kanban': return <Kanban className="h-3 w-3 text-purple-500" />;
+      case 'book': return <BookOpen className="h-3 w-3 text-orange-500" />;
+      default: return <CalendarIcon className="h-3 w-3 text-primary" />;
+    }
+  };
 
   return (
     <Sheet open={!!date} onOpenChange={() => onClose()}>
@@ -65,6 +78,16 @@ function DayPanel({ date, events, onClose, onEventClick, onCreateEvent }: DayPan
         </SheetHeader>
 
         <div className="mt-6 space-y-4">
+          {/* View Month Button */}
+          <Button 
+            variant="outline" 
+            className="w-full gap-2"
+            onClick={() => onViewMonth(date)}
+          >
+            <CalendarIcon className="h-4 w-4" />
+            Ver mes completo
+          </Button>
+
           {events.length === 0 ? (
             <div className="text-center py-8">
               <p className="text-muted-foreground mb-4">No hay eventos este día</p>
@@ -79,6 +102,7 @@ function DayPanel({ date, events, onClose, onEventClick, onCreateEvent }: DayPan
                 {events.map((event) => {
                   const statusConfig = STATUS_CONFIG[event.status];
                   const priorityConfig = PRIORITY_CONFIG[event.priority];
+                  const books = getBooksByIds(event.bookIds);
 
                   return (
                     <button
@@ -87,13 +111,16 @@ function DayPanel({ date, events, onClose, onEventClick, onCreateEvent }: DayPan
                       className={cn(
                         'w-full text-left p-4 rounded-lg border border-border/50 transition-all',
                         'hover:border-primary/50 hover:bg-primary/5 focus:outline-none focus:ring-2 focus:ring-primary',
-                        event.type === 'system' ? 'event-system' : 'event-user'
+                        event.type === 'system' ? 'bg-muted/30' : 'bg-card'
                       )}
                       aria-label={`Ver evento: ${event.title}`}
                     >
                       <div className="flex items-start justify-between gap-2">
                         <div className="flex-1 min-w-0">
-                          <p className="font-medium truncate">{event.title}</p>
+                          <div className="flex items-center gap-2">
+                            {getOriginIcon(event.origin)}
+                            <p className="font-medium truncate">{event.title}</p>
+                          </div>
                           {!event.allDay && (
                             <p className="text-xs text-muted-foreground mt-0.5">
                               {format(event.startAt, 'HH:mm')}
@@ -119,11 +146,16 @@ function DayPanel({ date, events, onClose, onEventClick, onCreateEvent }: DayPan
                             {tag.name}
                           </Badge>
                         ))}
+                        {event.tags.length > 2 && (
+                          <Badge variant="outline" className="text-xs">
+                            +{event.tags.length - 2}
+                          </Badge>
+                        )}
                       </div>
 
-                      {event.bookIds.length > 0 && (
+                      {books.length > 0 && (
                         <p className="text-xs text-muted-foreground mt-2">
-                          {event.bookIds.length} libro(s) asociado(s)
+                          📚 {books.length === 1 ? books[0].title : `${books.length} libros`}
                         </p>
                       )}
                     </button>
@@ -183,6 +215,7 @@ const DayCell = forwardRef<
         isSelected && 'ring-2 ring-primary'
       )}
       aria-label={`${format(day, "d 'de' MMMM", { locale: es })}${events.length > 0 ? `, ${events.length} eventos` : ''}`}
+      aria-describedby={events.length > 0 ? `tooltip-${day.toISOString()}` : undefined}
     >
       {format(day, 'd')}
     </button>
@@ -194,6 +227,7 @@ export const YearlyView = forwardRef<HTMLDivElement, YearlyViewProps>(
   function YearlyView({ filters }, ref) {
     const { selectedDate, setSelectedDate, setViewMode, setSelectedEvent, setIsEventPanelOpen, setQuickCreateDate, setIsQuickCreateOpen } = useCalendarContext();
     const { getEventsForDay, filterEvents } = useEvents();
+    const { getBooksByIds } = useBooks();
     
     const [selectedDay, setSelectedDay] = useState<Date | null>(null);
     const [dayEvents, setDayEvents] = useState<EditorialEvent[]>([]);
@@ -237,6 +271,12 @@ export const YearlyView = forwardRef<HTMLDivElement, YearlyViewProps>(
       setIsQuickCreateOpen(true);
     };
 
+    const handleViewMonth = (date: Date) => {
+      handleCloseDayPanel();
+      setSelectedDate(date);
+      setViewMode('month');
+    };
+
     const getEventDensity = (day: Date): 'none' | 'low' | 'medium' | 'high' => {
       const events = filterEvents(getEventsForDay(day), filters);
       if (events.length === 0) return 'none';
@@ -252,6 +292,19 @@ export const YearlyView = forwardRef<HTMLDivElement, YearlyViewProps>(
 
     const getEventsPreview = (day: Date): EditorialEvent[] => {
       return filterEvents(getEventsForDay(day), filters).slice(0, 3);
+    };
+
+    const getAllDayEvents = (day: Date): EditorialEvent[] => {
+      return filterEvents(getEventsForDay(day), filters);
+    };
+
+    const getOriginIcon = (origin: string) => {
+      switch (origin) {
+        case 'google': return <Cloud className="h-2.5 w-2.5 text-blue-500" />;
+        case 'kanban': return <Kanban className="h-2.5 w-2.5 text-purple-500" />;
+        case 'book': return <BookOpen className="h-2.5 w-2.5 text-orange-500" />;
+        default: return <CalendarIcon className="h-2.5 w-2.5 text-primary" />;
+      }
     };
 
     return (
@@ -321,6 +374,7 @@ export const YearlyView = forwardRef<HTMLDivElement, YearlyViewProps>(
                     const density = getEventDensity(day);
                     const isSystem = hasSystemEvent(day);
                     const events = getEventsPreview(day);
+                    const allEvents = getAllDayEvents(day);
                     const isSelected = selectedDay ? isSameDay(day, selectedDay) : false;
 
                     if (!isCurrentMonth || density === 'none') {
@@ -358,45 +412,66 @@ export const YearlyView = forwardRef<HTMLDivElement, YearlyViewProps>(
                           align="center"
                           className="max-w-xs p-3"
                           sideOffset={5}
+                          id={`tooltip-${day.toISOString()}`}
                         >
                           <div className="space-y-2">
-                            <p className="font-medium text-sm capitalize">
-                              {format(day, "d 'de' MMMM", { locale: es })}
-                            </p>
-                            {events.map((event) => (
-                              <div key={event.id} className="text-xs space-y-1">
-                                <p className="font-medium truncate">{event.title}</p>
-                                <div className="flex items-center gap-1 flex-wrap">
-                                  <Badge variant="outline" className={cn('text-[10px] px-1', STATUS_CONFIG[event.status].bgClass)}>
-                                    {STATUS_CONFIG[event.status].label}
-                                  </Badge>
-                                  <Badge variant="outline" className={cn('text-[10px] px-1', PRIORITY_CONFIG[event.priority].bgClass)}>
-                                    {PRIORITY_CONFIG[event.priority].label}
-                                  </Badge>
-                                </div>
-                                {event.bookIds.length > 0 && (
-                                  <p className="text-muted-foreground">
-                                    {event.bookIds.length} libro(s)
-                                  </p>
-                                )}
-                                {event.tags.length > 0 && (
-                                  <div className="flex gap-1 flex-wrap">
-                                    {event.tags.slice(0, 2).map((tag) => (
-                                      <span
-                                        key={tag.id}
-                                        className="px-1 rounded text-[9px]"
-                                        style={{ backgroundColor: `${tag.color}20`, color: tag.color }}
-                                      >
-                                        {tag.name}
-                                      </span>
-                                    ))}
+                            <div className="flex items-center justify-between gap-2">
+                              <p className="font-medium text-sm capitalize">
+                                {format(day, "d 'de' MMMM", { locale: es })}
+                              </p>
+                              <Badge variant="secondary" className="text-xs">
+                                {allEvents.length} evento{allEvents.length !== 1 ? 's' : ''}
+                              </Badge>
+                            </div>
+                            
+                            <div className="space-y-2">
+                              {events.map((event) => {
+                                const books = getBooksByIds(event.bookIds);
+                                return (
+                                  <div key={event.id} className="text-xs space-y-1 border-l-2 border-primary/50 pl-2">
+                                    <div className="flex items-center gap-1">
+                                      {getOriginIcon(event.origin)}
+                                      <p className="font-medium truncate">{event.title}</p>
+                                    </div>
+                                    <div className="flex items-center gap-1 flex-wrap">
+                                      <Badge variant="outline" className={cn('text-[10px] px-1 py-0', STATUS_CONFIG[event.status].bgClass)}>
+                                        {STATUS_CONFIG[event.status].label}
+                                      </Badge>
+                                      <Badge variant="outline" className={cn('text-[10px] px-1 py-0', PRIORITY_CONFIG[event.priority].bgClass)}>
+                                        {PRIORITY_CONFIG[event.priority].label}
+                                      </Badge>
+                                    </div>
+                                    {books.length > 0 && (
+                                      <p className="text-muted-foreground text-[10px]">
+                                        📚 {books.length === 1 ? books[0].title : `${books.length} libros`}
+                                      </p>
+                                    )}
+                                    {event.tags.length > 0 && (
+                                      <div className="flex gap-0.5 flex-wrap">
+                                        {event.tags.slice(0, 3).map((tag) => (
+                                          <span
+                                            key={tag.id}
+                                            className="px-1 rounded text-[9px]"
+                                            style={{ backgroundColor: `${tag.color}20`, color: tag.color }}
+                                          >
+                                            {tag.name}
+                                          </span>
+                                        ))}
+                                        {event.tags.length > 3 && (
+                                          <span className="text-[9px] text-muted-foreground">
+                                            +{event.tags.length - 3}
+                                          </span>
+                                        )}
+                                      </div>
+                                    )}
                                   </div>
-                                )}
-                              </div>
-                            ))}
-                            {filterEvents(getEventsForDay(day), filters).length > 3 && (
-                              <p className="text-xs text-muted-foreground">
-                                +{filterEvents(getEventsForDay(day), filters).length - 3} más
+                                );
+                              })}
+                            </div>
+                            
+                            {allEvents.length > 3 && (
+                              <p className="text-xs text-muted-foreground pt-1 border-t border-border">
+                                +{allEvents.length - 3} evento{allEvents.length - 3 !== 1 ? 's' : ''} más
                               </p>
                             )}
                           </div>
@@ -430,17 +505,16 @@ export const YearlyView = forwardRef<HTMLDivElement, YearlyViewProps>(
           </div>
         </div>
 
-        {/* Day Panel */}
+        {/* Day Panel - Click opens panel, NOT navigates to month */}
         <DayPanel
           date={selectedDay}
           events={dayEvents}
           onClose={handleCloseDayPanel}
           onEventClick={handleEventClick}
           onCreateEvent={handleCreateEvent}
+          onViewMonth={handleViewMonth}
         />
       </div>
     );
   }
 );
-
-export default YearlyView;

@@ -5,8 +5,7 @@ import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { X, Filter, RotateCcw } from 'lucide-react';
-import { useCalendarFilters } from '@/hooks/useCalendarFilters';
+import { X, Filter, RotateCcw, Calendar, Cloud, Kanban, BookOpen } from 'lucide-react';
 import {
   CalendarFilters as FiltersType,
   DEFAULT_TAGS,
@@ -16,6 +15,7 @@ import {
   EventStatus,
   EventPriority,
   Marketplace,
+  DEFAULT_FILTERS,
 } from '@/types/calendar';
 
 interface FilterPanelProps {
@@ -31,6 +31,18 @@ export function FilterPanel({ filters, onFiltersChange, onClose }: FilterPanelPr
 
   const toggleUserEvents = () => {
     onFiltersChange({ ...filters, showUserEvents: !filters.showUserEvents });
+  };
+
+  const toggleGoogleEvents = () => {
+    onFiltersChange({ ...filters, showGoogleEvents: !filters.showGoogleEvents });
+  };
+
+  const toggleKanbanEvents = () => {
+    onFiltersChange({ ...filters, showKanbanEvents: !filters.showKanbanEvents });
+  };
+
+  const toggleBookEvents = () => {
+    onFiltersChange({ ...filters, showBookEvents: !filters.showBookEvents });
   };
 
   const toggleTag = (tagId: string) => {
@@ -62,31 +74,22 @@ export function FilterPanel({ filters, onFiltersChange, onClose }: FilterPanelPr
   };
 
   const clearFilters = () => {
-    onFiltersChange({
-      showSystemEvents: true,
-      showUserEvents: true,
-      showKanbanEvents: true,
-      tags: [],
-      marketplaces: [],
-      statuses: [],
-      priorities: [],
-      bookIds: [],
-      assignedTo: [],
-      origin: [],
-      searchQuery: '',
-    });
+    onFiltersChange(DEFAULT_FILTERS);
   };
 
   const hasActiveFilters =
     !filters.showSystemEvents ||
     !filters.showUserEvents ||
+    !filters.showGoogleEvents ||
+    !filters.showKanbanEvents ||
+    !filters.showBookEvents ||
     filters.tags.length > 0 ||
     filters.statuses.length > 0 ||
     filters.priorities.length > 0 ||
     filters.marketplaces.length > 0;
 
   return (
-    <div className="bg-card border border-border rounded-lg p-4 w-64">
+    <div className="bg-card border border-border rounded-lg p-4 w-72">
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center gap-2">
           <Filter className="h-4 w-4 text-muted-foreground" />
@@ -106,14 +109,28 @@ export function FilterPanel({ filters, onFiltersChange, onClose }: FilterPanelPr
         </div>
       </div>
 
-      <ScrollArea className="h-[400px] pr-3">
+      <ScrollArea className="h-[450px] pr-3">
         <div className="space-y-4">
-          {/* Event Type */}
+          {/* Event Sources */}
           <div className="space-y-3">
-            <Label className="text-xs text-muted-foreground uppercase tracking-wider">Tipo de evento</Label>
-            <div className="space-y-2">
+            <Label className="text-xs text-muted-foreground uppercase tracking-wider">Fuentes de eventos</Label>
+            <div className="space-y-2.5">
               <div className="flex items-center justify-between">
-                <Label htmlFor="system" className="text-sm font-normal">Eventos del sistema</Label>
+                <div className="flex items-center gap-2">
+                  <Calendar className="h-4 w-4 text-primary" />
+                  <Label htmlFor="calendar" className="text-sm font-normal">Calendario</Label>
+                </div>
+                <Switch
+                  id="calendar"
+                  checked={filters.showUserEvents}
+                  onCheckedChange={toggleUserEvents}
+                />
+              </div>
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <Calendar className="h-4 w-4 text-accent" />
+                  <Label htmlFor="system" className="text-sm font-normal">Sistema</Label>
+                </div>
                 <Switch
                   id="system"
                   checked={filters.showSystemEvents}
@@ -121,11 +138,36 @@ export function FilterPanel({ filters, onFiltersChange, onClose }: FilterPanelPr
                 />
               </div>
               <div className="flex items-center justify-between">
-                <Label htmlFor="user" className="text-sm font-normal">Mis eventos</Label>
+                <div className="flex items-center gap-2">
+                  <Cloud className="h-4 w-4 text-blue-500" />
+                  <Label htmlFor="google" className="text-sm font-normal">Google Calendar</Label>
+                </div>
                 <Switch
-                  id="user"
-                  checked={filters.showUserEvents}
-                  onCheckedChange={toggleUserEvents}
+                  id="google"
+                  checked={filters.showGoogleEvents}
+                  onCheckedChange={toggleGoogleEvents}
+                />
+              </div>
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <Kanban className="h-4 w-4 text-purple-500" />
+                  <Label htmlFor="kanban" className="text-sm font-normal">Kanban de libros</Label>
+                </div>
+                <Switch
+                  id="kanban"
+                  checked={filters.showKanbanEvents}
+                  onCheckedChange={toggleKanbanEvents}
+                />
+              </div>
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <BookOpen className="h-4 w-4 text-orange-500" />
+                  <Label htmlFor="book" className="text-sm font-normal">Eventos de libros</Label>
+                </div>
+                <Switch
+                  id="book"
+                  checked={filters.showBookEvents}
+                  onCheckedChange={toggleBookEvents}
                 />
               </div>
             </div>

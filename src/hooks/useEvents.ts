@@ -3,7 +3,6 @@ import {
   EditorialEvent, 
   EventFormData, 
   CalendarFilters,
-  DEFAULT_FILTERS,
 } from '@/types/calendar';
 import { MOCK_EVENTS } from '@/data/mockData';
 import { SYSTEM_EVENTS, calculateDynamicDate } from '@/data/systemEvents';
@@ -16,6 +15,7 @@ import {
   startOfMonth,
   endOfMonth,
 } from 'date-fns';
+import { toast } from 'sonner';
 
 // Generate system events for a given year
 function generateSystemEventsForYear(year: number): EditorialEvent[] {
@@ -50,6 +50,7 @@ function generateSystemEventsForYear(year: number): EditorialEvent[] {
         checklistItems: [],
         reminders: template.defaultReminders,
         origin: 'local' as const,
+        sourceType: 'calendar' as const,
         createdAt: new Date(),
         updatedAt: new Date(),
       } as EditorialEvent;
@@ -59,7 +60,7 @@ function generateSystemEventsForYear(year: number): EditorialEvent[] {
 
 export function useEvents() {
   const [userEvents, setUserEvents] = useState<EditorialEvent[]>(MOCK_EVENTS);
-  const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'saved'>('idle');
+  const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle');
 
   // Generate system events for current and next year
   const systemEvents = useMemo(() => {
@@ -75,15 +76,20 @@ export function useEvents() {
     return [...userEvents, ...systemEvents];
   }, [userEvents, systemEvents]);
 
-  // Filter events with full-text search
+  // Filter events with full-text search and source filters
   const filterEvents = useCallback((
     events: EditorialEvent[],
     filters: CalendarFilters
   ): EditorialEvent[] => {
     return events.filter(event => {
-      // Type filter
+      // Type filter (system vs user)
       if (event.type === 'system' && !filters.showSystemEvents) return false;
       if (event.type === 'user' && !filters.showUserEvents) return false;
+
+      // Origin/Source filters
+      if (event.origin === 'google' && !filters.showGoogleEvents) return false;
+      if (event.origin === 'kanban' && !filters.showKanbanEvents) return false;
+      if (event.origin === 'book' && !filters.showBookEvents) return false;
 
       // Search query (full-text)
       if (filters.searchQuery) {
@@ -120,7 +126,7 @@ export function useEvents() {
         if (!filters.bookIds.some(bookId => event.bookIds.includes(bookId))) return false;
       }
 
-      // Origin filter
+      // Origin filter (explicit)
       if (filters.origin.length > 0) {
         if (!filters.origin.includes(event.origin)) return false;
       }
@@ -206,16 +212,34 @@ export function useEvents() {
     return getEventsInRange(weekStart, weekEnd, filters);
   }, [getEventsInRange]);
 
-  // Create event
-  const createEvent = useCallback((data: EventFormData): EditorialEvent => {
+  // Create event with validation
+  const createEvent = useCallback((data: EventFormData): EditorialEvent | null => {
+    // Validation
+    if (!data.title.trim()) {
+      toast.error('El título es obligatorio');
+      return null;
+    }
+
+    if (!data.startAt) {
+      toast.error('La fecha de inicio es obligatoria');
+      return null;
+    }
+
+    // Ensure endAt >= startAt
+    let endAt = data.endAt;
+    if (endAt < data.startAt) {
+      endAt = data.startAt;
+      toast.warning('La fecha de fin se ajustó a la fecha de inicio');
+    }
+
     const newEvent: EditorialEvent = {
-      id: `evt-${Date.now()}`,
+      id: `evt-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
       type: data.type,
-      title: data.title,
+      title: data.title.trim(),
       status: data.status,
       priority: data.priority,
       startAt: data.startAt,
-      endAt: data.endAt,
+      endAt: endAt,
       allDay: data.allDay,
       marketplace: data.marketplace,
       bookIds: data.bookIds,
@@ -225,40 +249,59 @@ export function useEvents() {
       reminders: data.reminders,
       assignedTo: data.assignedTo,
       origin: 'local',
+      sourceType: 'calendar',
       createdAt: new Date(),
       updatedAt: new Date(),
     };
 
+    // Optimistic update
     setUserEvents(prev => [...prev, newEvent]);
     
     setSaveStatus('saving');
-    setTimeout(() => setSaveStatus('saved'), 500);
+    
+    // Simulate backend save
+    setTimeout(() => {
+      setSaveStatus('saved');
+      toast.success('Evento creado correctamente');
+    }, 300);
+    
     setTimeout(() => setSaveStatus('idle'), 2000);
 
     return newEvent;
   }, []);
 
-  // Update event
+  // Update event with validation
   const updateEvent = useCallback((id: string, data: Partial<EditorialEvent>): void => {
+    // Validate dates if being updated
+    if (data.startAt && data.endAt && data.endAt < data.startAt) {
+      data.endAt = data.startAt;
+      toast.warning('La fecha de fin se ajustó a la fecha de inicio');
+    }
+
     setUserEvents(prev => prev.map(event => {
       if (event.id === id) {
-        return {
+        const updated = {
           ...event,
           ...data,
           updatedAt: new Date(),
         };
+        return updated;
       }
       return event;
     }));
 
     setSaveStatus('saving');
-    setTimeout(() => setSaveStatus('saved'), 500);
+    setTimeout(() => {
+      setSaveStatus('saved');
+      toast.success('Evento actualizado');
+    }, 300);
     setTimeout(() => setSaveStatus('idle'), 2000);
   }, []);
 
   // Delete event
   const deleteEvent = useCallback((id: string): void => {
     setUserEvents(prev => prev.filter(event => event.id !== id));
+    toast.success('Evento eliminado');
   }, []);
 
   // Move event to a new date (for drag & drop)
@@ -279,7 +322,10 @@ export function useEvents() {
     }));
 
     setSaveStatus('saving');
-    setTimeout(() => setSaveStatus('saved'), 500);
+    setTimeout(() => {
+      setSaveStatus('saved');
+      toast.success('Evento movido');
+    }, 300);
     setTimeout(() => setSaveStatus('idle'), 2000);
   }, []);
 
@@ -290,17 +336,19 @@ export function useEvents() {
 
     const newEvent: EditorialEvent = {
       ...event,
-      id: `evt-${Date.now()}`,
+      id: `evt-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
       type: 'user',
       systemKey: undefined,
       title: `${event.title} (copia)`,
       origin: 'local',
+      sourceType: 'calendar',
       googleEventId: undefined,
       createdAt: new Date(),
       updatedAt: new Date(),
     };
 
     setUserEvents(prev => [...prev, newEvent]);
+    toast.success('Evento duplicado');
     return newEvent;
   }, [allEvents]);
 
@@ -330,9 +378,17 @@ export function useEvents() {
         );
       }
       
-      // Add new events
-      return [...result, ...newEvents];
+      // Add new events with proper origin
+      const newWithOrigin = newEvents.map(e => ({
+        ...e,
+        origin: 'google' as const,
+        sourceType: 'google' as const,
+      }));
+      
+      return [...result, ...newWithOrigin];
     });
+    
+    toast.success(`${events.length} eventos importados de Google Calendar`);
   }, []);
 
   // Get event by ID

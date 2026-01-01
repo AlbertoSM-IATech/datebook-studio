@@ -5,7 +5,6 @@ import { Input } from '@/components/ui/input';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Badge } from '@/components/ui/badge';
-import { ScrollArea } from '@/components/ui/scroll-area';
 import { 
   Plus, 
   Filter, 
@@ -63,7 +62,9 @@ function CalendarContent({ mode = 'page', initialView = 'month' }: EditorialCale
   const activeFiltersCount = [
     !localFilters.showSystemEvents,
     !localFilters.showUserEvents,
+    !localFilters.showGoogleEvents,
     !localFilters.showKanbanEvents,
+    !localFilters.showBookEvents,
     localFilters.tags.length > 0,
     localFilters.statuses.length > 0,
     localFilters.priorities.length > 0,
@@ -81,13 +82,13 @@ function CalendarContent({ mode = 'page', initialView = 'month' }: EditorialCale
 
   return (
     <div className={cn(
-      'flex flex-col',
-      // Dynamic height based on mode
-      isEmbedded ? 'min-h-[500px]' : 'h-full',
+      'flex flex-col w-full',
+      // Dynamic height based on mode - no fixed heights that cause clipping
+      isEmbedded ? 'min-h-0' : 'h-full',
     )}>
       {/* Header/Toolbar - Sticky in embedded mode */}
       <div className={cn(
-        'flex items-center justify-between gap-4 flex-wrap',
+        'flex items-center justify-between gap-4 flex-wrap shrink-0',
         isEmbedded ? 'mb-4 sticky top-0 z-20 bg-card pb-2' : 'mb-6'
       )}>
         <div className="flex items-center gap-4">
@@ -195,18 +196,16 @@ function CalendarContent({ mode = 'page', initialView = 'month' }: EditorialCale
         </div>
       </div>
 
-      {/* Calendar View - Dynamic height based on view type */}
+      {/* Calendar View - Flexible height based on content */}
       <div className={cn(
-        'flex-1',
-        // For list view in embedded mode, allow internal scroll
-        viewMode === 'list' && isEmbedded && 'max-h-[600px] overflow-hidden',
-        // For month/year views, let them expand naturally
-        viewMode !== 'list' && 'min-h-0'
+        'flex-1 min-h-0',
+        // For list view, use internal scroll
+        viewMode === 'list' && isEmbedded && 'max-h-[500px] overflow-hidden',
       )}>
         {viewMode === 'month' && <MonthlyView filters={filtersWithSearch} legacyStyle={isEmbedded} />}
         {viewMode === 'year' && <YearlyView filters={filtersWithSearch} />}
         {viewMode === 'list' && (
-          <div className={cn(isEmbedded ? 'h-full' : 'h-full')}>
+          <div className="h-full">
             <ListView filters={filtersWithSearch} />
           </div>
         )}
