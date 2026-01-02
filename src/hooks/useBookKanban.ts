@@ -19,38 +19,64 @@ import {
 } from '@/types/calendar';
 import { startOfDay, endOfDay, isWithinInterval } from 'date-fns';
 
-// Mock kanban items for demonstration
-const MOCK_KANBAN_ITEMS: BookKanbanItem[] = [
-  {
-    id: 'kanban-1',
-    bookId: 'book-1',
-    title: 'Revisar capítulo 3',
-    status: 'in_progress',
-    priority: 'high',
-    dueDate: new Date(2025, 11, 26),
-    description: 'Revisar y corregir el capítulo 3 del manuscrito',
-    tags: [{ id: 'content', name: 'Contenido', color: 'hsl(262 83% 58%)' }],
-  },
-  {
-    id: 'kanban-2',
-    bookId: 'book-2',
-    title: 'Enviar a editor',
-    status: 'pending',
-    priority: 'urgent',
-    dueDate: new Date(2025, 11, 28),
-    startDate: new Date(2025, 11, 27),
-    description: 'Enviar manuscrito completo al editor',
-  },
-  {
-    id: 'kanban-3',
-    bookId: 'book-1',
-    title: 'Diseño de portada',
-    status: 'review',
-    priority: 'medium',
-    dueDate: new Date(2025, 11, 30),
-    tags: [{ id: 'marketing', name: 'Marketing', color: 'hsl(142 71% 45%)' }],
-  },
-];
+// Dynamic mock kanban items based on current date
+function generateMockKanbanItems(): BookKanbanItem[] {
+  const today = new Date();
+  const addDays = (date: Date, days: number) => new Date(date.getTime() + days * 24 * 60 * 60 * 1000);
+  
+  return [
+    {
+      id: 'kanban-1',
+      bookId: 'book-1',
+      title: 'Revisar capítulo 3',
+      status: 'in_progress',
+      priority: 'high',
+      dueDate: addDays(today, 4),
+      description: 'Revisar y corregir el capítulo 3 del manuscrito',
+      tags: [{ id: 'content', name: 'Contenido', color: 'hsl(262 83% 58%)' }],
+    },
+    {
+      id: 'kanban-2',
+      bookId: 'book-2',
+      title: 'Enviar a editor',
+      status: 'pending',
+      priority: 'urgent',
+      dueDate: addDays(today, 6),
+      startDate: addDays(today, 5),
+      description: 'Enviar manuscrito completo al editor',
+    },
+    {
+      id: 'kanban-3',
+      bookId: 'book-1',
+      title: 'Diseño de portada',
+      status: 'review',
+      priority: 'medium',
+      dueDate: addDays(today, 10),
+      tags: [{ id: 'marketing', name: 'Marketing', color: 'hsl(142 71% 45%)' }],
+    },
+    {
+      id: 'kanban-4',
+      bookId: 'book-3',
+      title: 'Corrección ortográfica',
+      status: 'pending',
+      priority: 'high',
+      dueDate: addDays(today, 3),
+      description: 'Revisión ortográfica final antes de enviar a maquetación',
+      tags: [{ id: 'deadline', name: 'Deadline', color: 'hsl(0 84% 60%)' }],
+    },
+    {
+      id: 'kanban-5',
+      bookId: 'book-4',
+      title: 'Actualizar sinopsis',
+      status: 'done',
+      priority: 'low',
+      dueDate: addDays(today, -2),
+      description: 'Reescribir la sinopsis para mejorar conversión',
+    },
+  ];
+}
+
+const MOCK_KANBAN_ITEMS: BookKanbanItem[] = generateMockKanbanItems();
 
 // Map kanban status to calendar event status
 function mapKanbanStatus(status: string): EventStatus {
@@ -77,7 +103,7 @@ function kanbanToCalendarItem(item: BookKanbanItem): CalendarItem | null {
   
   return {
     id: `kanban-${item.id}`,
-    sourceType: 'bookKanban' as CalendarSourceType,
+    sourceType: 'kanban', // Matches CalendarSourceType
     sourceId: item.id,
     title: item.title,
     startAt: startOfDay(startAt),
