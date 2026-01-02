@@ -3,8 +3,11 @@ import {
   EditorialEvent, 
   EventFormData, 
   CalendarFilters,
+  BookKanbanItem,
+  Tag,
+  EventStatus,
 } from '@/types/calendar';
-import { MOCK_EVENTS } from '@/data/mockData';
+import { MOCK_EVENTS, MOCK_BOOKS } from '@/data/mockData';
 import { SYSTEM_EVENTS, calculateDynamicDate } from '@/data/systemEvents';
 import { 
   startOfDay, 
@@ -58,6 +61,83 @@ function generateSystemEventsForYear(year: number): EditorialEvent[] {
     .filter((event): event is EditorialEvent => event !== null);
 }
 
+// Generate kanban events from mock data
+function generateKanbanEvents(): EditorialEvent[] {
+  const today = new Date();
+  const addDays = (date: Date, days: number) => new Date(date.getTime() + days * 24 * 60 * 60 * 1000);
+  
+  const mockKanbanItems: BookKanbanItem[] = [
+    {
+      id: 'kanban-1',
+      bookId: 'book-1',
+      title: 'Revisar capítulo 3',
+      status: 'in_progress',
+      priority: 'high',
+      dueDate: addDays(today, 4),
+      description: 'Revisar y corregir el capítulo 3 del manuscrito',
+      tags: [{ id: 'content', name: 'Contenido', color: 'hsl(262 83% 58%)' }],
+    },
+    {
+      id: 'kanban-2',
+      bookId: 'book-2',
+      title: 'Enviar a editor',
+      status: 'pending',
+      priority: 'urgent',
+      dueDate: addDays(today, 6),
+      startDate: addDays(today, 5),
+      description: 'Enviar manuscrito completo al editor',
+    },
+    {
+      id: 'kanban-3',
+      bookId: 'book-1',
+      title: 'Diseño de portada',
+      status: 'review',
+      priority: 'medium',
+      dueDate: addDays(today, 10),
+      tags: [{ id: 'marketing', name: 'Marketing', color: 'hsl(142 71% 45%)' }],
+    },
+    {
+      id: 'kanban-4',
+      bookId: 'book-3',
+      title: 'Corrección ortográfica',
+      status: 'pending',
+      priority: 'high',
+      dueDate: addDays(today, 3),
+      description: 'Revisión ortográfica final',
+      tags: [{ id: 'deadline', name: 'Deadline', color: 'hsl(0 84% 60%)' }],
+    },
+  ];
+  
+  const statusMap: Record<string, EventStatus> = {
+    'pending': 'pending',
+    'in_progress': 'in_progress',
+    'review': 'review',
+    'done': 'done',
+  };
+  
+  return mockKanbanItems
+    .filter(item => item.dueDate)
+    .map(item => ({
+      id: `kanban-${item.id}`,
+      type: 'user' as const,
+      title: item.title,
+      status: statusMap[item.status] || 'pending',
+      priority: item.priority || 'medium',
+      startAt: startOfDay(item.startDate || item.dueDate!),
+      endAt: endOfDay(item.dueDate!),
+      allDay: true,
+      bookIds: [item.bookId],
+      tags: item.tags || [],
+      description: item.description || '',
+      checklistItems: [],
+      reminders: [],
+      origin: 'kanban' as const,
+      sourceType: 'kanban' as const,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    } as EditorialEvent));
+}
+
 export function useEvents() {
   const [userEvents, setUserEvents] = useState<EditorialEvent[]>(MOCK_EVENTS);
   const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle');
@@ -71,10 +151,15 @@ export function useEvents() {
     ];
   }, []);
 
-  // All events combined
+  // Generate kanban events
+  const kanbanEvents = useMemo(() => {
+    return generateKanbanEvents();
+  }, []);
+
+  // All events combined (user + system + kanban)
   const allEvents = useMemo(() => {
-    return [...userEvents, ...systemEvents];
-  }, [userEvents, systemEvents]);
+    return [...userEvents, ...systemEvents, ...kanbanEvents];
+  }, [userEvents, systemEvents, kanbanEvents]);
 
   // Filter events with full-text search and source filters
   const filterEvents = useCallback((
@@ -405,6 +490,7 @@ export function useEvents() {
     events: allEvents,
     userEvents,
     systemEvents,
+    kanbanEvents,
     saveStatus,
     getEventsInRange,
     getEventsForDay,

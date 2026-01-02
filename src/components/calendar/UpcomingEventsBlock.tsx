@@ -14,17 +14,30 @@ import {
   Minus,
   AlertTriangle,
   ChevronRight,
+  Cloud,
+  Kanban,
+  BookOpen,
 } from 'lucide-react';
 import { useEvents } from '@/hooks/useEvents';
 import { useBooks } from '@/hooks/useBooks';
 import { useCalendarContext } from '@/contexts/CalendarContext';
-import { STATUS_CONFIG, PRIORITY_CONFIG, EditorialEvent } from '@/types/calendar';
+import { STATUS_CONFIG, PRIORITY_CONFIG, EditorialEvent, EventOrigin } from '@/types/calendar';
 
 const PriorityIcon = {
   low: ArrowDown,
   medium: Minus,
   high: ArrowUp,
   urgent: AlertTriangle,
+};
+
+// Source indicator based on origin
+const getSourceIcon = (origin: EventOrigin) => {
+  switch (origin) {
+    case 'google': return <span title="Google Calendar"><Cloud className="h-3 w-3 text-blue-500" /></span>;
+    case 'kanban': return <span title="Kanban"><Kanban className="h-3 w-3 text-purple-500" /></span>;
+    case 'book': return <span title="Libro"><BookOpen className="h-3 w-3 text-orange-500" /></span>;
+    default: return <span title="Calendario"><Calendar className="h-3 w-3 text-primary" /></span>;
+  }
 };
 
 interface UpcomingEventsBlockProps {
@@ -117,6 +130,7 @@ export function UpcomingEventsBlock({
                     <div className="flex items-start justify-between gap-2">
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2">
+                          {getSourceIcon(event.origin)}
                           <p className="font-medium text-sm truncate">{event.title}</p>
                           <ChevronRight className="h-3 w-3 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity" />
                         </div>
