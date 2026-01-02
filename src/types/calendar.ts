@@ -79,6 +79,8 @@ export interface EditorialEvent {
   googleCalendarId?: string;
   syncedAt?: Date;
   conflictState?: 'none' | 'local_changed' | 'google_changed' | 'both_changed';
+  // Kanban navigation
+  kanbanItemId?: string;
   createdAt: Date;
   updatedAt: Date;
   updatedBy?: string;
@@ -158,6 +160,15 @@ export interface CalendarMonthData {
   days: CalendarDayData[];
 }
 
+// Google Calendar Info (for calendar selector)
+export interface GoogleCalendarInfo {
+  id: string;
+  name: string;
+  primary: boolean;
+  color: string;
+  selected: boolean;
+}
+
 // Google Calendar Types
 export interface GoogleCalendarConnection {
   isConnected: boolean;
@@ -166,6 +177,7 @@ export interface GoogleCalendarConnection {
   refreshToken?: string;
   tokenExpiresAt?: Date;
   selectedCalendars: string[];
+  availableCalendars?: GoogleCalendarInfo[];
   lastSyncAt?: Date;
   syncEnabled: boolean;
 }

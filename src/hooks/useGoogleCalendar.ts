@@ -1,6 +1,6 @@
 import { useState, useCallback } from 'react';
 import { GoogleCalendarService } from '@/services/GoogleCalendarService';
-import { EditorialEvent, GoogleCalendarConnection, GoogleCalendarSyncLog } from '@/types/calendar';
+import { EditorialEvent, GoogleCalendarConnection, GoogleCalendarSyncLog, GoogleCalendarInfo } from '@/types/calendar';
 import { toast } from '@/hooks/use-toast';
 
 export function useGoogleCalendar() {
@@ -11,6 +11,9 @@ export function useGoogleCalendar() {
   const [syncLogs, setSyncLogs] = useState<GoogleCalendarSyncLog[]>(
     GoogleCalendarService.getSyncLogs()
   );
+  const [calendars, setCalendars] = useState<GoogleCalendarInfo[]>(
+    connection.availableCalendars || []
+  );
 
   const connect = useCallback(async () => {
     setIsLoading(true);
@@ -18,7 +21,9 @@ export function useGoogleCalendar() {
       // For demo purposes, we'll mock the connection
       // In production, this would redirect to OAuth
       GoogleCalendarService.mockConnect();
-      setConnection(GoogleCalendarService.getConnection());
+      const newConnection = GoogleCalendarService.getConnection();
+      setConnection(newConnection);
+      setCalendars(newConnection.availableCalendars || []);
       
       toast({
         title: 'Conectado a Google Calendar',
@@ -43,6 +48,7 @@ export function useGoogleCalendar() {
     try {
       await GoogleCalendarService.disconnect();
       setConnection(GoogleCalendarService.getConnection());
+      setCalendars([]);
       
       toast({
         title: 'Desconectado',
@@ -56,6 +62,37 @@ export function useGoogleCalendar() {
       });
     } finally {
       setIsLoading(false);
+    }
+  }, []);
+
+  const fetchCalendars = useCallback(async () => {
+    if (!connection.isConnected) return;
+    
+    try {
+      const cals = await GoogleCalendarService.getCalendars();
+      setCalendars(cals);
+    } catch (error) {
+      console.error('Error fetching calendars:', error);
+    }
+  }, [connection.isConnected]);
+
+  const selectCalendars = useCallback(async (calendarIds: string[]) => {
+    try {
+      await GoogleCalendarService.selectCalendars(calendarIds);
+      const newConnection = GoogleCalendarService.getConnection();
+      setConnection(newConnection);
+      setCalendars(newConnection.availableCalendars || []);
+      
+      toast({
+        title: 'Calendarios actualizados',
+        description: `${calendarIds.length} calendario(s) seleccionado(s).`,
+      });
+    } catch (error) {
+      toast({
+        title: 'Error',
+        description: 'No se pudieron actualizar los calendarios.',
+        variant: 'destructive',
+      });
     }
   }, []);
 
@@ -162,8 +199,11 @@ export function useGoogleCalendar() {
     isConnected: connection.isConnected,
     isLoading,
     syncLogs,
+    calendars,
     connect,
     disconnect,
+    fetchCalendars,
+    selectCalendars,
     importEvents,
     exportEvents,
     syncNow,

@@ -4,7 +4,7 @@
 // This service provides the contract for Google Calendar integration.
 // In production, this would connect to actual Google Calendar API.
 
-import { EditorialEvent, GoogleCalendarConnection, GoogleCalendarSyncLog } from '@/types/calendar';
+import { EditorialEvent, GoogleCalendarConnection, GoogleCalendarSyncLog, GoogleCalendarInfo } from '@/types/calendar';
 
 // Google Calendar API mock responses
 interface GoogleCalendarEvent {
@@ -22,16 +22,27 @@ interface GoogleCalendar {
   id: string;
   summary: string;
   primary?: boolean;
+  backgroundColor?: string;
 }
 
 class GoogleCalendarServiceClass {
   private connection: GoogleCalendarConnection = {
     isConnected: false,
     selectedCalendars: [],
+    availableCalendars: [],
     syncEnabled: false,
   };
 
   private syncLogs: GoogleCalendarSyncLog[] = [];
+
+  // Mock available calendars
+  private mockCalendars: GoogleCalendar[] = [
+    { id: 'primary', summary: 'Calendario principal', primary: true, backgroundColor: '#4285f4' },
+    { id: 'work', summary: 'Trabajo', backgroundColor: '#7986cb' },
+    { id: 'personal', summary: 'Personal', backgroundColor: '#33b679' },
+    { id: 'deadlines', summary: 'Fechas límite', backgroundColor: '#e67c73' },
+    { id: 'meetings', summary: 'Reuniones', backgroundColor: '#f6bf26' },
+  ];
 
   // ==================== Authentication ====================
 
@@ -49,7 +60,15 @@ class GoogleCalendarServiceClass {
     // In production: exchange code for tokens via backend
     console.log('Handling OAuth callback with code:', code);
     
-    // Mock successful connection
+    // Mock successful connection with available calendars
+    const availableCalendars: GoogleCalendarInfo[] = this.mockCalendars.map(cal => ({
+      id: cal.id,
+      name: cal.summary,
+      primary: cal.primary || false,
+      color: cal.backgroundColor || '#4285f4',
+      selected: cal.primary || false, // Select primary by default
+    }));
+
     this.connection = {
       isConnected: true,
       email: 'usuario@gmail.com',
@@ -57,6 +76,7 @@ class GoogleCalendarServiceClass {
       refreshToken: 'mock_refresh_token',
       tokenExpiresAt: new Date(Date.now() + 3600000),
       selectedCalendars: ['primary'],
+      availableCalendars,
       lastSyncAt: undefined,
       syncEnabled: true,
     };
@@ -69,6 +89,7 @@ class GoogleCalendarServiceClass {
     this.connection = {
       isConnected: false,
       selectedCalendars: [],
+      availableCalendars: [],
       syncEnabled: false,
     };
   }
@@ -83,21 +104,28 @@ class GoogleCalendarServiceClass {
 
   // ==================== Calendars ====================
 
-  async getCalendars(): Promise<GoogleCalendar[]> {
+  async getCalendars(): Promise<GoogleCalendarInfo[]> {
     if (!this.connection.isConnected) {
       throw new Error('Not connected to Google Calendar');
     }
 
-    // Mock calendars
-    return [
-      { id: 'primary', summary: 'Calendario principal', primary: true },
-      { id: 'work', summary: 'Trabajo' },
-      { id: 'personal', summary: 'Personal' },
-    ];
+    return this.connection.availableCalendars || [];
   }
 
   async selectCalendars(calendarIds: string[]): Promise<void> {
     this.connection.selectedCalendars = calendarIds;
+    
+    // Update available calendars selection state
+    if (this.connection.availableCalendars) {
+      this.connection.availableCalendars = this.connection.availableCalendars.map(cal => ({
+        ...cal,
+        selected: calendarIds.includes(cal.id),
+      }));
+    }
+  }
+
+  getSelectedCalendars(): string[] {
+    return this.connection.selectedCalendars;
   }
 
   // ==================== Import ====================
@@ -284,6 +312,7 @@ class GoogleCalendarServiceClass {
       checklistItems: [],
       reminders: [],
       origin: 'google',
+      sourceType: 'google',
       googleEventId: gEvent.id,
       syncedAt: new Date(),
       conflictState: 'none',
@@ -318,11 +347,20 @@ class GoogleCalendarServiceClass {
   // ==================== Mock Connect (for testing) ====================
 
   mockConnect(): void {
+    const availableCalendars: GoogleCalendarInfo[] = this.mockCalendars.map(cal => ({
+      id: cal.id,
+      name: cal.summary,
+      primary: cal.primary || false,
+      color: cal.backgroundColor || '#4285f4',
+      selected: cal.primary || false,
+    }));
+
     this.connection = {
       isConnected: true,
       email: 'demo@gmail.com',
       accessToken: 'mock_token',
       selectedCalendars: ['primary'],
+      availableCalendars,
       lastSyncAt: new Date(),
       syncEnabled: true,
     };
