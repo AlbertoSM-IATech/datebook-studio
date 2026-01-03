@@ -61,8 +61,8 @@ function generateSystemEventsForYear(year: number): EditorialEvent[] {
     .filter((event): event is EditorialEvent => event !== null);
 }
 
-// Generate kanban events from mock data
-function generateKanbanEvents(): EditorialEvent[] {
+// Generate book events from mock kanban data - UNIFIED as book_events
+function generateBookEvents(): EditorialEvent[] {
   const today = new Date();
   const addDays = (date: Date, days: number) => new Date(date.getTime() + days * 24 * 60 * 60 * 1000);
   
@@ -118,7 +118,7 @@ function generateKanbanEvents(): EditorialEvent[] {
   return mockKanbanItems
     .filter(item => item.dueDate)
     .map(item => ({
-      id: `kanban-${item.id}`,
+      id: `book-event-${item.id}`,
       type: 'user' as const,
       title: item.title,
       status: statusMap[item.status] || 'pending',
@@ -131,20 +131,21 @@ function generateKanbanEvents(): EditorialEvent[] {
       description: item.description || '',
       checklistItems: [],
       reminders: [],
-      origin: 'kanban' as const,
-      sourceType: 'kanban' as const,
-      // Store original kanban item ID for navigation
-      kanbanItemId: item.id,
+      origin: 'book_events' as const, // UNIFIED origin
+      sourceType: 'book_events' as const, // UNIFIED sourceType
+      // Navigation fields for kanban
+      kanban_task_id: item.id,
+      book_id: item.bookId,
       createdAt: new Date(),
       updatedAt: new Date(),
-    } as EditorialEvent & { kanbanItemId?: string }));
+    } as EditorialEvent));
 }
 
 interface EventsContextType {
   events: EditorialEvent[];
   userEvents: EditorialEvent[];
   systemEvents: EditorialEvent[];
-  kanbanEvents: EditorialEvent[];
+  bookEvents: EditorialEvent[]; // Renamed from kanbanEvents
   saveStatus: 'idle' | 'saving' | 'saved' | 'error';
   filterEvents: (events: EditorialEvent[], filters: CalendarFilters) => EditorialEvent[];
   getEventsInRange: (start: Date, end: Date, filters?: CalendarFilters) => EditorialEvent[];
@@ -161,7 +162,7 @@ interface EventsContextType {
   addImportedEvents: (events: EditorialEvent[]) => void;
   getEventById: (id: string) => EditorialEvent | undefined;
   getEventsByBookId: (bookId: string) => EditorialEvent[];
-  navigateToKanbanItem: (bookId: string, kanbanItemId: string) => void;
+  navigateToKanbanItem: (bookId: string, kanbanTaskId: string) => void;
 }
 
 const EventsContext = createContext<EventsContextType | undefined>(undefined);
@@ -179,15 +180,15 @@ export function EventsProvider({ children }: { children: ReactNode }) {
     ];
   }, []);
 
-  // Generate kanban events
-  const kanbanEvents = useMemo(() => {
-    return generateKanbanEvents();
+  // Generate book events (unified from kanban)
+  const bookEvents = useMemo(() => {
+    return generateBookEvents();
   }, []);
 
-  // All events combined (user + system + kanban)
+  // All events combined (user + system + book)
   const allEvents = useMemo(() => {
-    return [...userEvents, ...systemEvents, ...kanbanEvents];
-  }, [userEvents, systemEvents, kanbanEvents]);
+    return [...userEvents, ...systemEvents, ...bookEvents];
+  }, [userEvents, systemEvents, bookEvents]);
 
   // Filter events with full-text search and source filters
   const filterEvents = useCallback((
@@ -197,12 +198,11 @@ export function EventsProvider({ children }: { children: ReactNode }) {
     return events.filter(event => {
       // Type filter (system vs user)
       if (event.type === 'system' && !filters.showSystemEvents) return false;
-      if (event.type === 'user' && !filters.showUserEvents) return false;
+      if (event.type === 'user' && event.origin === 'local' && !filters.showUserEvents) return false;
 
-      // Origin/Source filters
+      // Origin/Source filters - UNIFIED book_events
       if (event.origin === 'google' && !filters.showGoogleEvents) return false;
-      if (event.origin === 'kanban' && !filters.showKanbanEvents) return false;
-      if (event.origin === 'book' && !filters.showBookEvents) return false;
+      if (event.origin === 'book_events' && !filters.showBookEventsEvents) return false;
 
       // Search query (full-text)
       if (filters.searchQuery) {
@@ -514,10 +514,9 @@ export function EventsProvider({ children }: { children: ReactNode }) {
   }, [allEvents]);
 
   // Navigate to kanban item in book page
-  const navigateToKanbanItem = useCallback((bookId: string, kanbanItemId: string): void => {
-    // This will be used by router to navigate
-    // For now, we'll use window.location, but ideally this should use react-router
-    const url = `/biblioteca/${bookId}?kanban=${kanbanItemId}`;
+  const navigateToKanbanItem = useCallback((bookId: string, kanbanTaskId: string): void => {
+    // Navigate to the book's kanban and highlight the task
+    const url = `/biblioteca/${bookId}?kanban=${kanbanTaskId}`;
     window.location.href = url;
   }, []);
 
@@ -525,7 +524,7 @@ export function EventsProvider({ children }: { children: ReactNode }) {
     events: allEvents,
     userEvents,
     systemEvents,
-    kanbanEvents,
+    bookEvents, // Renamed from kanbanEvents
     saveStatus,
     filterEvents,
     getEventsInRange,

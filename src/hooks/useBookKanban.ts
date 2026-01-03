@@ -102,8 +102,8 @@ function kanbanToCalendarItem(item: BookKanbanItem): CalendarItem | null {
   const endAt = item.dueDate;
   
   return {
-    id: `kanban-${item.id}`,
-    sourceType: 'kanban', // Matches CalendarSourceType
+    id: `book-event-${item.id}`,
+    sourceType: 'book_events', // UNIFIED CalendarSourceType
     sourceId: item.id,
     title: item.title,
     startAt: startOfDay(startAt),

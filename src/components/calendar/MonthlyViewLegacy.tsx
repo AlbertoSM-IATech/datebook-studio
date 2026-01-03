@@ -43,11 +43,11 @@ function DayEventsSheet({ date, events, onClose, onEventClick, onCreateEvent }: 
   
   if (!date) return null;
 
+  // UNIFIED: book_events with purple color
   const getOriginIcon = (origin: string) => {
     switch (origin) {
       case 'google': return <Cloud className="h-3 w-3 text-blue-500" />;
-      case 'kanban': return <Kanban className="h-3 w-3 text-purple-500" />;
-      case 'book': return <BookOpen className="h-3 w-3 text-orange-500" />;
+      case 'book_events': return <BookOpen className="h-3 w-3 text-purple-500" />;
       default: return <CalendarIcon className="h-3 w-3 text-primary" />;
     }
   };
@@ -256,14 +256,13 @@ export function MonthlyView({ filters, legacyStyle = false }: MonthlyViewProps) 
     setDragOverDay(null);
   }, [draggedEvent, moveEvent]);
 
-  // Check for events from different sources
+  // Check for events from different sources - UNIFIED book_events
   const getSourceIndicators = (dayEvents: EditorialEvent[]) => {
     const hasSystem = dayEvents.some(e => e.type === 'system');
     const hasUser = dayEvents.some(e => e.type === 'user' && e.origin === 'local');
     const hasGoogle = dayEvents.some(e => e.origin === 'google');
-    const hasKanban = dayEvents.some(e => e.origin === 'kanban');
-    const hasBook = dayEvents.some(e => e.origin === 'book');
-    return { hasSystem, hasUser, hasGoogle, hasKanban, hasBook };
+    const hasBookEvents = dayEvents.some(e => e.origin === 'book_events');
+    return { hasSystem, hasUser, hasGoogle, hasBookEvents };
   };
 
   // Legacy widget style (dark, compact, numeric indicators, SQUARE DAYS)
@@ -369,37 +368,31 @@ export function MonthlyView({ filters, legacyStyle = false }: MonthlyViewProps) 
                     </span>
                   </div>
 
-                  {/* Event Indicator - Numeric Badge */}
+                  {/* Event Indicator - DOTS per event (max 6 + "+X") */}
                   {eventCount > 0 && (
-                    <div className="absolute bottom-1 right-1 flex items-center gap-0.5">
-                      {/* Source indicators */}
-                      <div className="flex gap-0.5 mr-0.5">
-                        {sources.hasSystem && (
-                          <div className="w-1.5 h-1.5 rounded-full bg-accent" title="Sistema" />
-                        )}
-                        {sources.hasUser && (
-                          <div className="w-1.5 h-1.5 rounded-full bg-primary" title="Personal" />
-                        )}
-                        {sources.hasGoogle && (
-                          <div className="w-1.5 h-1.5 rounded-full bg-blue-500" title="Google" />
-                        )}
-                        {sources.hasKanban && (
-                          <div className="w-1.5 h-1.5 rounded-full bg-purple-500" title="Kanban" />
-                        )}
-                        {sources.hasBook && (
-                          <div className="w-1.5 h-1.5 rounded-full bg-orange-500" title="Libro" />
-                        )}
-                      </div>
-                      {/* Count badge */}
-                      <Badge 
-                        variant="secondary" 
-                        className={cn(
-                          'h-5 min-w-[20px] px-1 text-[10px] font-semibold',
-                          'bg-primary/80 text-primary-foreground hover:bg-primary'
-                        )}
-                      >
-                        {eventCount}
-                      </Badge>
+                    <div className="absolute bottom-1 left-1 right-1 flex items-center gap-0.5 flex-wrap">
+                      {dayEvents.slice(0, 6).map((event, idx) => {
+                        // Color based on origin - PURPLE for book_events
+                        let dotColor = 'bg-primary';
+                        if (event.origin === 'book_events') {
+                          dotColor = 'bg-purple-500'; // FIXED PURPLE
+                        } else if (event.type === 'system') {
+                          dotColor = 'bg-accent';
+                        } else if (event.origin === 'google') {
+                          dotColor = 'bg-blue-500';
+                        }
+                        
+                        return (
+                          <div
+                            key={`${event.id}-${idx}`}
+                            className={cn('w-2 h-2 rounded-full', dotColor)}
+                            title={event.title}
+                          />
+                        );
+                      })}
+                      {eventCount > 6 && (
+                        <span className="text-[9px] text-muted-foreground ml-0.5">+{eventCount - 6}</span>
+                      )}
                     </div>
                   )}
                 </div>

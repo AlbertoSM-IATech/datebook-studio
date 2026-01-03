@@ -172,7 +172,10 @@ export function GoogleCalendarModal({ open, onOpenChange }: GoogleCalendarModalP
                 ) : isConnected ? (
                   'Desconectar'
                 ) : (
-                  'Conectar'
+                  <>
+                    <Cloud className="h-4 w-4 mr-2" />
+                    Conectar con Google (OAuth 2.0)
+                  </>
                 )}
               </Button>
             </div>

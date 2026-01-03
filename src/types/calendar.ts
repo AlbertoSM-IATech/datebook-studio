@@ -17,11 +17,11 @@ export type ReminderChannel = 'in_app' | 'email' | 'push';
 // Marketplace
 export type Marketplace = 'ES' | 'US' | 'DE' | 'FR' | 'IT' | 'UK' | 'CA' | 'AU' | 'MX' | 'BR' | 'JP';
 
-// Event Origin - Extended to include all sources
-export type EventOrigin = 'local' | 'google' | 'kanban' | 'book';
+// Event Origin - Unified: book_events replaces kanban and book
+export type EventOrigin = 'local' | 'google' | 'book_events';
 
 // Calendar Source Type (for unified calendar items)
-export type CalendarSourceType = 'calendar' | 'google' | 'kanban' | 'book';
+export type CalendarSourceType = 'calendar' | 'google' | 'book_events';
 
 // Checklist Item
 export interface ChecklistItem {
@@ -75,12 +75,20 @@ export interface EditorialEvent {
   assignedTo?: string;
   origin: EventOrigin;
   sourceType?: CalendarSourceType;
+  // Google Calendar sync fields
   googleEventId?: string;
   googleCalendarId?: string;
   syncedAt?: Date;
   conflictState?: 'none' | 'local_changed' | 'google_changed' | 'both_changed';
+  // Google Calendar OAuth fields for sync
+  gcal_event_id?: string;
+  gcal_calendar_id?: string;
+  gcal_sync_status?: 'not_linked' | 'linked' | 'pending' | 'error';
+  gcal_last_synced_at?: Date;
+  gcal_etag?: string;
   // Kanban navigation
-  kanbanItemId?: string;
+  kanban_task_id?: string;
+  book_id?: string;
   createdAt: Date;
   updatedAt: Date;
   updatedBy?: string;
@@ -106,13 +114,12 @@ export type CalendarViewMode = 'month' | 'year' | 'list';
 // Calendar Module Mode
 export type CalendarModuleMode = 'embedded' | 'page';
 
-// Filter State - Extended with all source filters
+// Filter State - Unified with showBookEventsEvents
 export interface CalendarFilters {
   showSystemEvents: boolean;
   showUserEvents: boolean;
   showGoogleEvents: boolean;
-  showKanbanEvents: boolean;
-  showBookEvents: boolean;
+  showBookEventsEvents: boolean; // Unified: replaces showKanbanEvents and showBookEvents
   tags: string[];
   marketplaces: Marketplace[];
   statuses: EventStatus[];
@@ -180,6 +187,28 @@ export interface GoogleCalendarConnection {
   availableCalendars?: GoogleCalendarInfo[];
   lastSyncAt?: Date;
   syncEnabled: boolean;
+}
+
+// Google OAuth Settings for sync configuration
+export interface GoogleOAuthSettings {
+  syncUserEvents: boolean;
+  syncBookEvents: boolean;
+  syncSystemEvents: boolean;
+  syncDirection: 'to_google' | 'from_google' | 'bidirectional';
+  targetCalendarId?: string;
+}
+
+// Google OAuth Connection entity for database
+export interface GoogleOAuthConnection {
+  user_id: string;
+  provider: 'google';
+  access_token: string; // encrypted
+  refresh_token: string; // encrypted
+  scope: string;
+  expires_at: Date;
+  status: 'connected' | 'revoked' | 'error';
+  created_at: Date;
+  updated_at: Date;
 }
 
 export interface GoogleCalendarSyncLog {
@@ -271,12 +300,11 @@ export interface CalendarSource {
   icon?: string;
 }
 
-// Available Calendar Sources
+// Available Calendar Sources - Unified: single book_events source
 export const CALENDAR_SOURCES: CalendarSource[] = [
-  { id: 'calendar', type: 'calendar', name: 'Eventos del calendario', enabledByDefault: true, icon: 'Calendar' },
+  { id: 'calendar', type: 'calendar', name: 'Eventos propios', enabledByDefault: true, icon: 'Calendar' },
   { id: 'google', type: 'google', name: 'Google Calendar', enabledByDefault: true, icon: 'Cloud' },
-  { id: 'kanban', type: 'kanban', name: 'Kanban de libros', enabledByDefault: true, icon: 'Kanban' },
-  { id: 'book', type: 'book', name: 'Eventos de libros', enabledByDefault: true, icon: 'Book' },
+  { id: 'book_events', type: 'book_events', name: 'Eventos de libros', enabledByDefault: true, icon: 'BookOpen' },
 ];
 
 // Unified Calendar Item (can be from events or kanban)
@@ -310,13 +338,12 @@ export interface BookKanbanItem {
   tags?: Tag[];
 }
 
-// Default filters
+// Default filters - Unified with showBookEventsEvents
 export const DEFAULT_FILTERS: CalendarFilters = {
   showSystemEvents: true,
   showUserEvents: true,
   showGoogleEvents: true,
-  showKanbanEvents: true,
-  showBookEvents: true,
+  showBookEventsEvents: true, // Unified
   tags: [],
   marketplaces: [],
   statuses: [],

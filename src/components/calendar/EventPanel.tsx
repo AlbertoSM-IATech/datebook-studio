@@ -34,6 +34,7 @@ import {
 import { useCalendarContext } from '@/contexts/CalendarContext';
 import { useEvents } from '@/hooks/useEvents';
 import { useBooks } from '@/hooks/useBooks';
+import { Kanban } from 'lucide-react';
 import {
   EditorialEvent,
   EventStatus,
@@ -51,7 +52,7 @@ import {
 
 export function EventPanel() {
   const { selectedEvent, setSelectedEvent, isEventPanelOpen, setIsEventPanelOpen } = useCalendarContext();
-  const { updateEvent, deleteEvent, duplicateEvent, saveStatus } = useEvents();
+  const { updateEvent, deleteEvent, duplicateEvent, saveStatus, navigateToKanbanItem } = useEvents();
   const { books, getBooksByIds } = useBooks();
 
   const [localEvent, setLocalEvent] = useState<EditorialEvent | null>(null);
@@ -248,6 +249,29 @@ export function EventPanel() {
         </SheetHeader>
 
         <div className="space-y-6 mt-6">
+          {/* Book Events Navigation Banner - ALWAYS PURPLE */}
+          {localEvent.origin === 'book_events' && localEvent.kanban_task_id && (
+            <div className="bg-purple-500/10 border border-purple-500/30 rounded-lg p-3">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <BookOpen className="h-4 w-4 text-purple-500" />
+                  <span className="text-sm text-purple-200">Evento del Kanban de libro</span>
+                </div>
+                <Button 
+                  onClick={() => {
+                    if (localEvent.book_id && localEvent.kanban_task_id) {
+                      navigateToKanbanItem(localEvent.book_id, localEvent.kanban_task_id);
+                    }
+                  }}
+                  className="gap-2 bg-purple-600 hover:bg-purple-700 text-white"
+                  size="sm"
+                >
+                  <Kanban className="h-4 w-4" />
+                  Ir al Kanban
+                </Button>
+              </div>
+            </div>
+          )}
           {/* Status & Priority */}
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">

@@ -30,12 +30,11 @@ const PriorityIcon = {
   urgent: AlertTriangle,
 };
 
-// Source indicator based on origin
+// Source indicator based on origin - UNIFIED book_events with PURPLE
 const getSourceIcon = (origin: EventOrigin) => {
   switch (origin) {
     case 'google': return <span title="Google Calendar"><Cloud className="h-3 w-3 text-blue-500" /></span>;
-    case 'kanban': return <span title="Kanban"><Kanban className="h-3 w-3 text-purple-500" /></span>;
-    case 'book': return <span title="Libro"><BookOpen className="h-3 w-3 text-orange-500" /></span>;
+    case 'book_events': return <span title="Eventos de libros"><BookOpen className="h-3 w-3 text-purple-500" /></span>;
     default: return <span title="Calendario"><Calendar className="h-3 w-3 text-primary" /></span>;
   }
 };
