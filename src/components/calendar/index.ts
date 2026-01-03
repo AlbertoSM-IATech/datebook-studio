@@ -8,4 +8,5 @@ export { EventChip } from './EventChip';
 export { QuickCreateModal } from './QuickCreateModal';
 export { FilterPanel } from './FilterPanel';
 export { GoogleCalendarModal } from './GoogleCalendarModal';
+export { GoogleCalendarSettings } from './GoogleCalendarSettings';
 export { UpcomingEventsBlock } from './UpcomingEventsBlock';

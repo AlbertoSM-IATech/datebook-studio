@@ -32,12 +32,9 @@ export function useCalendarFilters() {
     setFilters(prev => ({ ...prev, showGoogleEvents: !prev.showGoogleEvents }));
   }, []);
 
-  const toggleKanbanEvents = useCallback((): void => {
-    setFilters(prev => ({ ...prev, showKanbanEvents: !prev.showKanbanEvents }));
-  }, []);
-
-  const toggleBookEvents = useCallback((): void => {
-    setFilters(prev => ({ ...prev, showBookEvents: !prev.showBookEvents }));
+  // UNIFIED: Single toggle for book events
+  const toggleBookEventsEvents = useCallback((): void => {
+    setFilters(prev => ({ ...prev, showBookEventsEvents: !prev.showBookEventsEvents }));
   }, []);
 
   const toggleTag = useCallback((tagId: string): void => {
@@ -148,8 +145,7 @@ export function useCalendarFilters() {
       !filters.showSystemEvents ||
       !filters.showUserEvents ||
       !filters.showGoogleEvents ||
-      !filters.showKanbanEvents ||
-      !filters.showBookEvents ||
+      !filters.showBookEventsEvents ||
       filters.tags.length > 0 ||
       filters.marketplaces.length > 0 ||
       filters.statuses.length > 0 ||
@@ -167,8 +163,7 @@ export function useCalendarFilters() {
     toggleSystemEvents,
     toggleUserEvents,
     toggleGoogleEvents,
-    toggleKanbanEvents,
-    toggleBookEvents,
+    toggleBookEventsEvents, // Unified
     toggleTag,
     toggleMarketplace,
     toggleStatus,
