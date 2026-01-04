@@ -17,7 +17,8 @@ import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from '@/components/ui/sheet';
-import { ChevronLeft, ChevronRight, Calendar as CalendarIcon, Plus, Cloud, Kanban, BookOpen } from 'lucide-react';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
+import { ChevronLeft, ChevronRight, Calendar as CalendarIcon, Plus, Cloud, BookOpen } from 'lucide-react';
 import { useCalendarContext } from '@/contexts/CalendarContext';
 import { useEvents } from '@/hooks/useEvents';
 import { useBooks } from '@/hooks/useBooks';
@@ -330,7 +331,11 @@ export function MonthlyView({ filters, legacyStyle = false }: MonthlyViewProps) 
               const isDragOver = dragOverDay && isSameDay(day, dragOverDay);
               const sources = getSourceIndicators(dayEvents);
 
-              return (
+              // Tooltip content for events preview
+              const tooltipEvents = dayEvents.slice(0, 6);
+              const hasMore = eventCount > 6;
+
+              const dayCell = (
                 <div
                   key={day.toISOString()}
                   className={cn(
@@ -386,7 +391,6 @@ export function MonthlyView({ filters, legacyStyle = false }: MonthlyViewProps) 
                           <div
                             key={`${event.id}-${idx}`}
                             className={cn('w-2 h-2 rounded-full', dotColor)}
-                            title={event.title}
                           />
                         );
                       })}
@@ -397,6 +401,57 @@ export function MonthlyView({ filters, legacyStyle = false }: MonthlyViewProps) 
                   )}
                 </div>
               );
+
+              // Wrap with tooltip if there are events
+              if (eventCount > 0) {
+                return (
+                  <Tooltip key={day.toISOString()}>
+                    <TooltipTrigger asChild>
+                      {dayCell}
+                    </TooltipTrigger>
+                    <TooltipContent 
+                      side="top" 
+                      className="max-w-[220px] p-2"
+                      sideOffset={5}
+                    >
+                      <div className="space-y-1.5">
+                        <p className="text-xs font-medium border-b border-border/50 pb-1 capitalize">
+                          {format(day, "EEEE d", { locale: es })}
+                        </p>
+                        {tooltipEvents.map((event) => {
+                          const statusConfig = STATUS_CONFIG[event.status];
+                          return (
+                            <div key={event.id} className="flex items-center gap-2 text-xs">
+                              <div
+                                className={cn(
+                                  'w-2 h-2 rounded-full flex-shrink-0',
+                                  event.origin === 'book_events' && 'bg-purple-500',
+                                  event.type === 'system' && event.origin !== 'book_events' && 'bg-accent',
+                                  event.origin === 'local' && 'bg-primary',
+                                  event.origin === 'google' && 'bg-blue-500'
+                                )}
+                              />
+                              <span className="truncate flex-1">{event.title}</span>
+                              {!event.allDay && (
+                                <span className="text-muted-foreground text-[10px]">
+                                  {format(event.startAt, 'HH:mm')}
+                                </span>
+                              )}
+                            </div>
+                          );
+                        })}
+                        {hasMore && (
+                          <p className="text-[10px] text-muted-foreground pt-0.5">
+                            +{eventCount - 6} más...
+                          </p>
+                        )}
+                      </div>
+                    </TooltipContent>
+                  </Tooltip>
+                );
+              }
+
+              return dayCell;
             })}
           </div>
         </div>
