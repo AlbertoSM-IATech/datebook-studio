@@ -411,7 +411,7 @@ export function MonthlyView({ filters, legacyStyle = false }: MonthlyViewProps) 
                     </TooltipTrigger>
                     <TooltipContent 
                       side="top" 
-                      className="max-w-[220px] p-2"
+                      className="max-w-[220px] p-2 animate-scale-in"
                       sideOffset={5}
                     >
                       <div className="space-y-1.5">
