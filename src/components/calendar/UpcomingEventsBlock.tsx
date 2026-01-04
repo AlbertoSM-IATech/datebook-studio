@@ -1,3 +1,4 @@
+import { useState, useMemo } from 'react';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
@@ -5,6 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
 import {
   Calendar,
   CheckCircle,
@@ -16,6 +18,7 @@ import {
   ChevronRight,
   Cloud,
   BookOpen,
+  Sparkles,
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useEvents } from '@/hooks/useEvents';
@@ -39,6 +42,8 @@ const getSourceIcon = (origin: EventOrigin) => {
   }
 };
 
+type EventFilter = 'all' | 'system' | 'user' | 'book_events';
+
 interface UpcomingEventsBlockProps {
   maxEvents?: number;
   showActions?: boolean;
@@ -54,8 +59,39 @@ export function UpcomingEventsBlock({
   const { getUpcomingEvents, markEventDone } = useEvents();
   const { getBooksByIds } = useBooks();
   const { setSelectedEvent, setIsEventPanelOpen, setQuickCreateDate, setIsQuickCreateOpen, setSelectedDate } = useCalendarContext();
+  
+  const [activeFilter, setActiveFilter] = useState<EventFilter>('all');
 
-  const upcomingEvents = getUpcomingEvents(maxEvents);
+  const upcomingEvents = getUpcomingEvents(maxEvents * 2); // Get more to allow filtering
+
+  // Filter events based on selected filter
+  const filteredEvents = useMemo(() => {
+    let filtered = upcomingEvents;
+    
+    switch (activeFilter) {
+      case 'system':
+        filtered = upcomingEvents.filter(e => e.type === 'system');
+        break;
+      case 'user':
+        filtered = upcomingEvents.filter(e => e.type === 'user' && e.origin === 'local');
+        break;
+      case 'book_events':
+        filtered = upcomingEvents.filter(e => e.origin === 'book_events');
+        break;
+      default:
+        break;
+    }
+    
+    return filtered.slice(0, maxEvents);
+  }, [upcomingEvents, activeFilter, maxEvents]);
+
+  // Count events by type for badges
+  const eventCounts = useMemo(() => ({
+    all: upcomingEvents.length,
+    system: upcomingEvents.filter(e => e.type === 'system').length,
+    user: upcomingEvents.filter(e => e.type === 'user' && e.origin === 'local').length,
+    book_events: upcomingEvents.filter(e => e.origin === 'book_events').length,
+  }), [upcomingEvents]);
 
   const handleOpenEvent = (event: EditorialEvent) => {
     // Navigate to calendar page with the event's date selected
@@ -96,26 +132,101 @@ export function UpcomingEventsBlock({
             </Button>
           )}
         </div>
+        
+        {/* Quick Filters */}
+        <ToggleGroup 
+          type="single" 
+          value={activeFilter}
+          onValueChange={(value) => value && setActiveFilter(value as EventFilter)}
+          className="justify-start"
+        >
+          <ToggleGroupItem 
+            value="all" 
+            size="sm" 
+            className="text-xs gap-1 h-7 px-2"
+          >
+            Todos
+            <Badge variant="secondary" className="h-4 px-1 text-[10px]">
+              {eventCounts.all}
+            </Badge>
+          </ToggleGroupItem>
+          <ToggleGroupItem 
+            value="user" 
+            size="sm" 
+            className="text-xs gap-1 h-7 px-2"
+          >
+            <Calendar className="h-3 w-3" />
+            Propios
+            {eventCounts.user > 0 && (
+              <Badge variant="secondary" className="h-4 px-1 text-[10px]">
+                {eventCounts.user}
+              </Badge>
+            )}
+          </ToggleGroupItem>
+          <ToggleGroupItem 
+            value="book_events" 
+            size="sm" 
+            className="text-xs gap-1 h-7 px-2"
+          >
+            <BookOpen className="h-3 w-3 text-purple-500" />
+            Libros
+            {eventCounts.book_events > 0 && (
+              <Badge variant="secondary" className="h-4 px-1 text-[10px] bg-purple-500/20">
+                {eventCounts.book_events}
+              </Badge>
+            )}
+          </ToggleGroupItem>
+          <ToggleGroupItem 
+            value="system" 
+            size="sm" 
+            className="text-xs gap-1 h-7 px-2"
+          >
+            <Sparkles className="h-3 w-3" />
+            Sistema
+            {eventCounts.system > 0 && (
+              <Badge variant="secondary" className="h-4 px-1 text-[10px]">
+                {eventCounts.system}
+              </Badge>
+            )}
+          </ToggleGroupItem>
+        </ToggleGroup>
       </CardHeader>
       <CardContent>
-        <ScrollArea className="h-[400px] pr-2">
-          {upcomingEvents.length === 0 ? (
+        <ScrollArea className="h-[350px] pr-2">
+          {filteredEvents.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-8 text-center">
               <Calendar className="h-12 w-12 text-muted-foreground/30 mb-3" />
-              <p className="text-sm text-muted-foreground">No hay eventos próximos</p>
-              <Button 
-                variant="outline" 
-                size="sm" 
-                className="mt-3 gap-2"
-                onClick={handleCreateToday}
-              >
-                <Plus className="h-4 w-4" />
-                Crear evento
-              </Button>
+              <p className="text-sm text-muted-foreground">
+                {activeFilter === 'all' 
+                  ? 'No hay eventos próximos' 
+                  : `No hay eventos de tipo "${activeFilter === 'book_events' ? 'libros' : activeFilter === 'system' ? 'sistema' : 'propios'}"`
+                }
+              </p>
+              {activeFilter !== 'all' && (
+                <Button 
+                  variant="ghost" 
+                  size="sm" 
+                  className="mt-2"
+                  onClick={() => setActiveFilter('all')}
+                >
+                  Ver todos
+                </Button>
+              )}
+              {activeFilter === 'all' && (
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  className="mt-3 gap-2"
+                  onClick={handleCreateToday}
+                >
+                  <Plus className="h-4 w-4" />
+                  Crear evento
+                </Button>
+              )}
             </div>
           ) : (
             <div className="space-y-2">
-              {upcomingEvents.map((event) => {
+              {filteredEvents.map((event) => {
                 const Icon = PriorityIcon[event.priority];
                 const statusConfig = STATUS_CONFIG[event.status];
                 const priorityConfig = PRIORITY_CONFIG[event.priority];
