@@ -15,9 +15,9 @@ import {
   AlertTriangle,
   ChevronRight,
   Cloud,
-  Kanban,
   BookOpen,
 } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 import { useEvents } from '@/hooks/useEvents';
 import { useBooks } from '@/hooks/useBooks';
 import { useCalendarContext } from '@/contexts/CalendarContext';
@@ -50,15 +50,20 @@ export function UpcomingEventsBlock({
   showActions = true,
   className 
 }: UpcomingEventsBlockProps) {
+  const navigate = useNavigate();
   const { getUpcomingEvents, markEventDone } = useEvents();
   const { getBooksByIds } = useBooks();
-  const { setSelectedEvent, setIsEventPanelOpen, setQuickCreateDate, setIsQuickCreateOpen } = useCalendarContext();
+  const { setSelectedEvent, setIsEventPanelOpen, setQuickCreateDate, setIsQuickCreateOpen, setSelectedDate } = useCalendarContext();
 
   const upcomingEvents = getUpcomingEvents(maxEvents);
 
   const handleOpenEvent = (event: EditorialEvent) => {
+    // Navigate to calendar page with the event's date selected
+    setSelectedDate(new Date(event.startAt));
     setSelectedEvent(event);
     setIsEventPanelOpen(true);
+    // Navigate to calendar page if not already there
+    navigate('/');
   };
 
   const handleMarkDone = (eventId: string, e: React.MouseEvent) => {
