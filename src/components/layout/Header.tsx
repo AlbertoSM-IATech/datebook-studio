@@ -1,19 +1,14 @@
-import { useNavigate, useLocation } from 'react-router-dom';
-import { BookOpen, Calendar, Moon, Sun } from 'lucide-react';
+import { BookOpen, Moon, Sun } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { useTheme } from '@/contexts/ThemeContext';
 
 export function Header() {
-  const navigate = useNavigate();
-  const location = useLocation();
   const { resolvedTheme, setTheme } = useTheme();
 
   const toggleTheme = () => {
     setTheme(resolvedTheme === 'dark' ? 'light' : 'dark');
   };
-
-  const isActive = (path: string) => location.pathname === path;
 
   return (
     <header className="border-b border-border bg-card">
@@ -29,25 +24,6 @@ export function Header() {
         </div>
         
         <nav className="flex items-center gap-2">
-          <Button
-            variant={isActive('/') ? 'default' : 'ghost'}
-            onClick={() => navigate('/')}
-            aria-label="Ir al Dashboard"
-          >
-            Dashboard
-          </Button>
-          <Button
-            variant={isActive('/calendario') ? 'default' : 'ghost'}
-            onClick={() => navigate('/calendario')}
-            className="gap-2"
-            aria-label="Ir al Calendario"
-          >
-            <Calendar className="h-4 w-4" />
-            Calendario
-          </Button>
-          
-          <div className="w-px h-6 bg-border mx-2" />
-          
           <Tooltip>
             <TooltipTrigger asChild>
               <Button

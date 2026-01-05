@@ -1,7 +1,7 @@
 import { EditorialCalendarModule, UpcomingEventsBlock } from '@/components/calendar';
 import { Header } from '@/components/layout';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { TrendingUp, BookOpen, Bell, Calendar } from 'lucide-react';
+import { Calendar } from 'lucide-react';
 import { useEvents } from '@/hooks/useEvents';
 import { startOfMonth, endOfMonth } from 'date-fns';
 import { CalendarProvider } from '@/contexts/CalendarContext';
@@ -49,9 +49,9 @@ const Index = () => {
           </div>
 
           {/* Right Column - Stats & Upcoming Events (1 col) */}
-          <div className="space-y-6">
+          <div className="flex flex-col gap-6">
             {/* Events This Month Card */}
-            <Card className="card-hover">
+            <Card className="card-hover flex-shrink-0">
               <CardHeader className="pb-2">
                 <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
                   <Calendar className="h-4 w-4" />
@@ -71,45 +71,13 @@ const Index = () => {
               </CardContent>
             </Card>
 
-            {/* Activity Feed */}
-            <Card className="card-hover">
-              <CardHeader className="pb-3">
-                <CardTitle className="font-heading text-lg flex items-center gap-2">
-                  <TrendingUp className="h-5 w-5 text-primary" />
-                  Actividad Reciente
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-3">
-                  {[
-                    { action: 'Lanzamiento programado', book: 'El Último Verano', time: 'En 5 días', icon: BookOpen },
-                    { action: 'Nuevo review', book: 'Secretos del Mar', time: 'Hace 2 horas', icon: TrendingUp },
-                    { action: 'Recordatorio activado', book: 'El Detective', time: 'Hace 1 día', icon: Bell },
-                  ].map((activity, i) => {
-                    const Icon = activity.icon;
-                    return (
-                      <div 
-                        key={i} 
-                        className="flex items-center gap-3 py-2 border-b border-border/50 last:border-0"
-                      >
-                        <div className="w-8 h-8 rounded-lg bg-muted flex items-center justify-center shrink-0">
-                          <Icon className="h-4 w-4 text-muted-foreground" />
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <p className="font-medium text-sm truncate">{activity.action}</p>
-                          <p className="text-xs text-muted-foreground truncate">{activity.book}</p>
-                        </div>
-                        <span className="text-xs text-muted-foreground shrink-0">{activity.time}</span>
-                      </div>
-                    );
-                  })}
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* Upcoming Events Block */}
+            {/* Upcoming Events Block - Expands to fill remaining space */}
             <CalendarProvider>
-              <UpcomingEventsBlock maxEvents={5} showActions={true} />
+              <UpcomingEventsBlock 
+                maxEvents={12} 
+                showActions={true} 
+                className="flex-1 min-h-[400px]"
+              />
             </CalendarProvider>
           </div>
         </div>
