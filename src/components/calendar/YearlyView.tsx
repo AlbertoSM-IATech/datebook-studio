@@ -377,6 +377,7 @@ export const YearlyView = forwardRef<HTMLDivElement, YearlyViewProps>(
                     const allEvents = getAllDayEvents(day);
                     const isSelected = selectedDay ? isSameDay(day, selectedDay) : false;
 
+                    // If no events, don't show tooltip
                     if (!isCurrentMonth || density === 'none') {
                       return (
                         <DayCell
@@ -392,6 +393,8 @@ export const YearlyView = forwardRef<HTMLDivElement, YearlyViewProps>(
                         />
                       );
                     }
+
+                    // Show tooltip with events on hover (like monthly view)
 
                     return (
                       <Tooltip key={day.toISOString()}>

@@ -74,7 +74,6 @@ const Index = () => {
             {/* Upcoming Events Block - Expands to fill remaining space */}
             <CalendarProvider>
               <UpcomingEventsBlock 
-                maxEvents={12} 
                 showActions={true} 
                 className="flex-1 min-h-[400px]"
               />

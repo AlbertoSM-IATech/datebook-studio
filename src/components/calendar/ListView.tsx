@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useCallback } from 'react';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
@@ -26,6 +26,13 @@ import {
   TooltipTrigger,
 } from '@/components/ui/tooltip';
 import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import {
   Search,
   ArrowUpDown,
   ArrowUp,
@@ -42,6 +49,10 @@ import {
   Kanban,
   BookOpen,
   Calendar,
+  GripVertical,
+  Check,
+  X,
+  Pencil,
 } from 'lucide-react';
 import { useCalendarContext } from '@/contexts/CalendarContext';
 import { useEvents } from '@/hooks/useEvents';
@@ -54,6 +65,8 @@ import {
   PRIORITY_CONFIG,
   DEFAULT_LIST_COLUMNS,
   ListViewColumn,
+  EventStatus,
+  EventPriority,
 } from '@/types/calendar';
 
 interface ListViewProps {
@@ -62,16 +75,56 @@ interface ListViewProps {
 
 const ITEMS_PER_PAGE = 20;
 
+// Column order storage key
+const COLUMN_ORDER_KEY = 'publify-list-column-order';
+
 export function ListView({ filters }: ListViewProps) {
   const { setSelectedEvent, setIsEventPanelOpen } = useCalendarContext();
-  const { events, filterEvents, duplicateEvent, deleteEvent, markEventDone } = useEvents();
+  const { events, filterEvents, duplicateEvent, deleteEvent, markEventDone, updateEvent } = useEvents();
   const { getBooksByIds } = useBooks();
   
   const [searchQuery, setSearchQuery] = useState('');
   const [sortState, setSortState] = useState<SortState>({ column: 'startAt', direction: 'asc' });
   const [currentPage, setCurrentPage] = useState(1);
-  const [columns, setColumns] = useState<ListViewColumn[]>(DEFAULT_LIST_COLUMNS);
   const [selectedEvents, setSelectedEvents] = useState<Set<string>>(new Set());
+  
+  // Column ordering with localStorage persistence
+  const [columns, setColumns] = useState<ListViewColumn[]>(() => {
+    const saved = localStorage.getItem(COLUMN_ORDER_KEY);
+    if (saved) {
+      try {
+        const savedOrder = JSON.parse(saved);
+        // Map saved order to current columns (in case columns changed)
+        return DEFAULT_LIST_COLUMNS.map(col => ({
+          ...col,
+          visible: savedOrder.find((s: any) => s.key === col.key)?.visible ?? col.visible,
+        })).sort((a, b) => {
+          const aIndex = savedOrder.findIndex((s: any) => s.key === a.key);
+          const bIndex = savedOrder.findIndex((s: any) => s.key === b.key);
+          if (aIndex === -1) return 1;
+          if (bIndex === -1) return -1;
+          return aIndex - bIndex;
+        });
+      } catch {
+        return DEFAULT_LIST_COLUMNS;
+      }
+    }
+    return DEFAULT_LIST_COLUMNS;
+  });
+
+  // Inline editing state
+  const [editingCell, setEditingCell] = useState<{ eventId: string; column: string } | null>(null);
+  const [editValue, setEditValue] = useState<string>('');
+
+  // Drag state for column reordering
+  const [draggedColumn, setDraggedColumn] = useState<string | null>(null);
+
+  // Save column order to localStorage
+  const saveColumnOrder = useCallback((newColumns: ListViewColumn[]) => {
+    localStorage.setItem(COLUMN_ORDER_KEY, JSON.stringify(
+      newColumns.map(c => ({ key: c.key, visible: c.visible }))
+    ));
+  }, []);
 
   // Filter and search events
   const filteredEvents = useMemo(() => {
@@ -162,9 +215,80 @@ export function ListView({ filters }: ListViewProps) {
   };
 
   const toggleColumn = (columnKey: string) => {
-    setColumns(prev => prev.map(col => 
+    const newColumns = columns.map(col => 
       col.key === columnKey ? { ...col, visible: !col.visible } : col
-    ));
+    );
+    setColumns(newColumns);
+    saveColumnOrder(newColumns);
+  };
+
+  // Handle column drag start
+  const handleDragStart = (columnKey: string) => {
+    setDraggedColumn(columnKey);
+  };
+
+  // Handle column drag over
+  const handleDragOver = (e: React.DragEvent, targetKey: string) => {
+    e.preventDefault();
+    if (!draggedColumn || draggedColumn === targetKey) return;
+  };
+
+  // Handle column drop - reorder columns
+  const handleDrop = (targetKey: string) => {
+    if (!draggedColumn || draggedColumn === targetKey) {
+      setDraggedColumn(null);
+      return;
+    }
+
+    const draggedIndex = columns.findIndex(c => c.key === draggedColumn);
+    const targetIndex = columns.findIndex(c => c.key === targetKey);
+
+    const newColumns = [...columns];
+    const [removed] = newColumns.splice(draggedIndex, 1);
+    newColumns.splice(targetIndex, 0, removed);
+
+    setColumns(newColumns);
+    saveColumnOrder(newColumns);
+    setDraggedColumn(null);
+  };
+
+  // Start inline editing
+  const startEditing = (eventId: string, column: string, currentValue: string) => {
+    setEditingCell({ eventId, column });
+    setEditValue(currentValue);
+  };
+
+  // Cancel editing
+  const cancelEditing = () => {
+    setEditingCell(null);
+    setEditValue('');
+  };
+
+  // Save inline edit
+  const saveEdit = (eventId: string, column: string) => {
+    if (!editingCell) return;
+
+    const updates: Partial<EditorialEvent> = {};
+    
+    switch (column) {
+      case 'title':
+        if (editValue.trim()) {
+          updates.title = editValue.trim();
+        }
+        break;
+      case 'status':
+        updates.status = editValue as EventStatus;
+        break;
+      case 'priority':
+        updates.priority = editValue as EventPriority;
+        break;
+    }
+
+    if (Object.keys(updates).length > 0) {
+      updateEvent(eventId, updates);
+    }
+
+    cancelEditing();
   };
 
   const visibleColumns = columns.filter(col => col.visible);
@@ -196,7 +320,11 @@ export function ListView({ filters }: ListViewProps) {
     }
   };
 
+  // Render editable cell content
   const renderCellContent = (event: EditorialEvent, column: ListViewColumn) => {
+    const isEditing = editingCell?.eventId === event.id && editingCell?.column === column.key;
+    const isEditable = event.type === 'user' && ['title', 'status', 'priority'].includes(column.key);
+
     switch (column.key) {
       case 'startAt':
         return (
@@ -214,39 +342,145 @@ export function ListView({ filters }: ListViewProps) {
         );
       
       case 'title':
+        if (isEditing) {
+          return (
+            <div className="flex items-center gap-1">
+              <Input
+                value={editValue}
+                onChange={(e) => setEditValue(e.target.value)}
+                className="h-7 text-sm"
+                autoFocus
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') saveEdit(event.id, column.key);
+                  if (e.key === 'Escape') cancelEditing();
+                }}
+              />
+              <Button size="icon" variant="ghost" className="h-6 w-6" onClick={() => saveEdit(event.id, column.key)}>
+                <Check className="h-3 w-3" />
+              </Button>
+              <Button size="icon" variant="ghost" className="h-6 w-6" onClick={cancelEditing}>
+                <X className="h-3 w-3" />
+              </Button>
+            </div>
+          );
+        }
         return (
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <button 
-                onClick={() => handleOpenEvent(event)}
-                className="text-left font-medium hover:text-primary transition-colors truncate max-w-[200px] block"
+          <div className="flex items-center gap-1 group/cell">
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <button 
+                  onClick={() => handleOpenEvent(event)}
+                  className="text-left font-medium hover:text-primary transition-colors truncate max-w-[200px] block"
+                >
+                  {event.title}
+                </button>
+              </TooltipTrigger>
+              <TooltipContent side="top" className="max-w-xs">
+                <p>{event.title}</p>
+                {event.description && (
+                  <p className="text-xs text-muted-foreground mt-1 line-clamp-2">{event.description}</p>
+                )}
+              </TooltipContent>
+            </Tooltip>
+            {isEditable && (
+              <Button
+                size="icon"
+                variant="ghost"
+                className="h-5 w-5 opacity-0 group-hover/cell:opacity-100 transition-opacity"
+                onClick={() => startEditing(event.id, column.key, event.title)}
               >
-                {event.title}
-              </button>
-            </TooltipTrigger>
-            <TooltipContent side="top" className="max-w-xs">
-              <p>{event.title}</p>
-              {event.description && (
-                <p className="text-xs text-muted-foreground mt-1 line-clamp-2">{event.description}</p>
-              )}
-            </TooltipContent>
-          </Tooltip>
+                <Pencil className="h-3 w-3" />
+              </Button>
+            )}
+          </div>
         );
       
       case 'status':
         const statusConfig = STATUS_CONFIG[event.status];
+        if (isEditing) {
+          return (
+            <div className="flex items-center gap-1">
+              <Select value={editValue} onValueChange={(value) => { setEditValue(value); }}>
+                <SelectTrigger className="h-7 text-xs w-28">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {Object.entries(STATUS_CONFIG).map(([key, config]) => (
+                    <SelectItem key={key} value={key} className="text-xs">
+                      {config.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <Button size="icon" variant="ghost" className="h-6 w-6" onClick={() => saveEdit(event.id, column.key)}>
+                <Check className="h-3 w-3" />
+              </Button>
+              <Button size="icon" variant="ghost" className="h-6 w-6" onClick={cancelEditing}>
+                <X className="h-3 w-3" />
+              </Button>
+            </div>
+          );
+        }
         return (
-          <Badge variant="outline" className={cn('text-xs whitespace-nowrap', statusConfig.bgClass)}>
-            {statusConfig.label}
-          </Badge>
+          <div className="flex items-center gap-1 group/cell">
+            <Badge variant="outline" className={cn('text-xs whitespace-nowrap', statusConfig.bgClass)}>
+              {statusConfig.label}
+            </Badge>
+            {isEditable && (
+              <Button
+                size="icon"
+                variant="ghost"
+                className="h-5 w-5 opacity-0 group-hover/cell:opacity-100 transition-opacity"
+                onClick={() => startEditing(event.id, column.key, event.status)}
+              >
+                <Pencil className="h-3 w-3" />
+              </Button>
+            )}
+          </div>
         );
       
       case 'priority':
         const priorityConfig = PRIORITY_CONFIG[event.priority];
+        if (isEditing) {
+          return (
+            <div className="flex items-center gap-1">
+              <Select value={editValue} onValueChange={(value) => { setEditValue(value); }}>
+                <SelectTrigger className="h-7 text-xs w-24">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {Object.entries(PRIORITY_CONFIG).map(([key, config]) => (
+                    <SelectItem key={key} value={key} className="text-xs">
+                      {config.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <Button size="icon" variant="ghost" className="h-6 w-6" onClick={() => saveEdit(event.id, column.key)}>
+                <Check className="h-3 w-3" />
+              </Button>
+              <Button size="icon" variant="ghost" className="h-6 w-6" onClick={cancelEditing}>
+                <X className="h-3 w-3" />
+              </Button>
+            </div>
+          );
+        }
         return (
-          <Badge variant="outline" className={cn('text-xs whitespace-nowrap', priorityConfig.bgClass)}>
-            {priorityConfig.label}
-          </Badge>
+          <div className="flex items-center gap-1 group/cell">
+            <Badge variant="outline" className={cn('text-xs whitespace-nowrap', priorityConfig.bgClass)}>
+              {priorityConfig.label}
+            </Badge>
+            {isEditable && (
+              <Button
+                size="icon"
+                variant="ghost"
+                className="h-5 w-5 opacity-0 group-hover/cell:opacity-100 transition-opacity"
+                onClick={() => startEditing(event.id, column.key, event.priority)}
+              >
+                <Pencil className="h-3 w-3" />
+              </Button>
+            )}
+          </div>
         );
       
       case 'assignedTo':
@@ -416,13 +650,19 @@ export function ListView({ filters }: ListViewProps) {
                     aria-label="Seleccionar todos"
                   />
                 </TableHead>
-                {visibleColumns.map(col => (
+                {visibleColumns.map((col, index) => (
                   <TableHead 
                     key={col.key}
+                    draggable
+                    onDragStart={() => handleDragStart(col.key)}
+                    onDragOver={(e) => handleDragOver(e, col.key)}
+                    onDrop={() => handleDrop(col.key)}
+                    onDragEnd={() => setDraggedColumn(null)}
                     style={{ width: col.width, minWidth: col.width }}
                     className={cn(
                       col.sortable ? 'cursor-pointer select-none' : '',
-                      'whitespace-nowrap'
+                      'whitespace-nowrap',
+                      draggedColumn === col.key && 'opacity-50 bg-muted'
                     )}
                     onClick={() => col.sortable && handleSort(col.key)}
                     aria-sort={sortState.column === col.key 
@@ -431,6 +671,7 @@ export function ListView({ filters }: ListViewProps) {
                     }
                   >
                     <div className="flex items-center gap-1">
+                      <GripVertical className="h-3 w-3 text-muted-foreground cursor-grab" />
                       {col.label}
                       {col.sortable && renderSortIcon(col.key)}
                     </div>
