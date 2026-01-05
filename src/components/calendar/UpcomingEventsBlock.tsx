@@ -1,5 +1,5 @@
-import { useState, useMemo } from 'react';
-import { format } from 'date-fns';
+import { useState, useMemo, useEffect } from 'react';
+import { format, isToday } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -20,11 +20,12 @@ import {
   BookOpen,
   Sparkles,
 } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
 import { useEvents } from '@/hooks/useEvents';
 import { useBooks } from '@/hooks/useBooks';
 import { useCalendarContext } from '@/contexts/CalendarContext';
 import { STATUS_CONFIG, PRIORITY_CONFIG, EditorialEvent, EventOrigin } from '@/types/calendar';
+
+const FILTER_STORAGE_KEY = 'publify-upcoming-events-filter';
 
 const PriorityIcon = {
   low: ArrowDown,
@@ -55,12 +56,20 @@ export function UpcomingEventsBlock({
   showActions = true,
   className 
 }: UpcomingEventsBlockProps) {
-  const navigate = useNavigate();
   const { getUpcomingEvents, markEventDone } = useEvents();
   const { getBooksByIds } = useBooks();
   const { setSelectedEvent, setIsEventPanelOpen, setQuickCreateDate, setIsQuickCreateOpen, setSelectedDate } = useCalendarContext();
   
-  const [activeFilter, setActiveFilter] = useState<EventFilter>('all');
+  // Load filter from localStorage
+  const [activeFilter, setActiveFilter] = useState<EventFilter>(() => {
+    const saved = localStorage.getItem(FILTER_STORAGE_KEY);
+    return (saved as EventFilter) || 'all';
+  });
+
+  // Persist filter to localStorage
+  useEffect(() => {
+    localStorage.setItem(FILTER_STORAGE_KEY, activeFilter);
+  }, [activeFilter]);
 
   const upcomingEvents = getUpcomingEvents(maxEvents * 2); // Get more to allow filtering
 
@@ -98,8 +107,6 @@ export function UpcomingEventsBlock({
     setSelectedDate(new Date(event.startAt));
     setSelectedEvent(event);
     setIsEventPanelOpen(true);
-    // Navigate to calendar page if not already there
-    navigate('/');
   };
 
   const handleMarkDone = (eventId: string, e: React.MouseEvent) => {
@@ -113,8 +120,8 @@ export function UpcomingEventsBlock({
   };
 
   return (
-    <Card className={cn('card-hover', className)}>
-      <CardHeader className="pb-3">
+    <Card className={cn('card-hover flex flex-col', className)}>
+      <CardHeader className="pb-2 flex-shrink-0">
         <div className="flex items-center justify-between">
           <CardTitle className="font-heading text-lg flex items-center gap-2">
             <Calendar className="h-5 w-5 text-primary" />
@@ -133,17 +140,17 @@ export function UpcomingEventsBlock({
           )}
         </div>
         
-        {/* Quick Filters */}
+        {/* Quick Filters - Compact layout */}
         <ToggleGroup 
           type="single" 
           value={activeFilter}
           onValueChange={(value) => value && setActiveFilter(value as EventFilter)}
-          className="justify-start"
+          className="justify-start flex-wrap gap-1"
         >
           <ToggleGroupItem 
             value="all" 
             size="sm" 
-            className="text-xs gap-1 h-7 px-2"
+            className="text-xs gap-1 h-6 px-2"
           >
             Todos
             <Badge variant="secondary" className="h-4 px-1 text-[10px]">
@@ -153,7 +160,7 @@ export function UpcomingEventsBlock({
           <ToggleGroupItem 
             value="user" 
             size="sm" 
-            className="text-xs gap-1 h-7 px-2"
+            className="text-xs gap-1 h-6 px-1.5"
           >
             <Calendar className="h-3 w-3" />
             Propios
@@ -166,7 +173,7 @@ export function UpcomingEventsBlock({
           <ToggleGroupItem 
             value="book_events" 
             size="sm" 
-            className="text-xs gap-1 h-7 px-2"
+            className="text-xs gap-1 h-6 px-1.5"
           >
             <BookOpen className="h-3 w-3 text-purple-500" />
             Libros
@@ -179,7 +186,7 @@ export function UpcomingEventsBlock({
           <ToggleGroupItem 
             value="system" 
             size="sm" 
-            className="text-xs gap-1 h-7 px-2"
+            className="text-xs gap-1 h-6 px-1.5"
           >
             <Sparkles className="h-3 w-3" />
             Sistema
@@ -191,8 +198,8 @@ export function UpcomingEventsBlock({
           </ToggleGroupItem>
         </ToggleGroup>
       </CardHeader>
-      <CardContent>
-        <ScrollArea className="h-[350px] pr-2">
+      <CardContent className="flex-1 overflow-hidden pt-2">
+        <ScrollArea className="h-full pr-2">
           {filteredEvents.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-8 text-center">
               <Calendar className="h-12 w-12 text-muted-foreground/30 mb-3" />
@@ -231,15 +238,19 @@ export function UpcomingEventsBlock({
                 const statusConfig = STATUS_CONFIG[event.status];
                 const priorityConfig = PRIORITY_CONFIG[event.priority];
                 const books = getBooksByIds(event.bookIds);
+                const eventIsToday = isToday(event.startAt);
 
                 return (
                   <button
                     key={event.id}
                     onClick={() => handleOpenEvent(event)}
                     className={cn(
-                      'w-full text-left p-3 rounded-lg border border-border/50 transition-all group',
+                      'w-full text-left p-3 rounded-lg border transition-all group',
                       'hover:border-primary/50 hover:bg-primary/5 focus:outline-none focus:ring-2 focus:ring-primary',
-                      event.type === 'system' ? 'event-system' : 'event-user'
+                      event.type === 'system' ? 'event-system' : 'event-user',
+                      eventIsToday 
+                        ? 'border-primary/60 bg-primary/10 shadow-sm shadow-primary/20' 
+                        : 'border-border/50'
                     )}
                   >
                     <div className="flex items-start justify-between gap-2">
@@ -247,6 +258,14 @@ export function UpcomingEventsBlock({
                         <div className="flex items-center gap-2">
                           {getSourceIcon(event.origin)}
                           <p className="font-medium text-sm truncate">{event.title}</p>
+                          {eventIsToday && (
+                            <Badge 
+                              variant="default" 
+                              className="h-4 px-1.5 text-[10px] bg-primary text-primary-foreground animate-pulse"
+                            >
+                              Hoy
+                            </Badge>
+                          )}
                           <ChevronRight className="h-3 w-3 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity" />
                         </div>
                         <p className="text-xs text-muted-foreground mt-0.5">
