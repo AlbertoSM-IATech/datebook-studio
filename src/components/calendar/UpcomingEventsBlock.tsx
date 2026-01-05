@@ -1,5 +1,5 @@
 import { useState, useMemo, useEffect } from 'react';
-import { format, isToday } from 'date-fns';
+import { format, isToday, startOfDay } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -26,6 +26,7 @@ import { useCalendarContext } from '@/contexts/CalendarContext';
 import { STATUS_CONFIG, PRIORITY_CONFIG, EditorialEvent, EventOrigin } from '@/types/calendar';
 
 const FILTER_STORAGE_KEY = 'publify-upcoming-events-filter';
+const MAX_UPCOMING_EVENTS = 7;
 
 const PriorityIcon = {
   low: ArrowDown,
@@ -46,13 +47,11 @@ const getSourceIcon = (origin: EventOrigin) => {
 type EventFilter = 'all' | 'system' | 'user' | 'book_events';
 
 interface UpcomingEventsBlockProps {
-  maxEvents?: number;
   showActions?: boolean;
   className?: string;
 }
 
 export function UpcomingEventsBlock({ 
-  maxEvents = 10, 
   showActions = true,
   className 
 }: UpcomingEventsBlockProps) {
@@ -71,7 +70,12 @@ export function UpcomingEventsBlock({
     localStorage.setItem(FILTER_STORAGE_KEY, activeFilter);
   }, [activeFilter]);
 
-  const upcomingEvents = getUpcomingEvents(maxEvents * 2); // Get more to allow filtering
+  // Get upcoming events from today onwards (max 7)
+  const upcomingEvents = useMemo(() => {
+    const today = startOfDay(new Date());
+    const events = getUpcomingEvents(50); // Get more to allow filtering
+    return events.filter(e => startOfDay(e.startAt) >= today);
+  }, [getUpcomingEvents]);
 
   // Filter events based on selected filter
   const filteredEvents = useMemo(() => {
@@ -91,19 +95,18 @@ export function UpcomingEventsBlock({
         break;
     }
     
-    return filtered.slice(0, maxEvents);
-  }, [upcomingEvents, activeFilter, maxEvents]);
+    return filtered.slice(0, MAX_UPCOMING_EVENTS);
+  }, [upcomingEvents, activeFilter]);
 
   // Count events by type for badges
   const eventCounts = useMemo(() => ({
-    all: upcomingEvents.length,
+    all: Math.min(upcomingEvents.length, MAX_UPCOMING_EVENTS),
     system: upcomingEvents.filter(e => e.type === 'system').length,
     user: upcomingEvents.filter(e => e.type === 'user' && e.origin === 'local').length,
     book_events: upcomingEvents.filter(e => e.origin === 'book_events').length,
   }), [upcomingEvents]);
 
   const handleOpenEvent = (event: EditorialEvent) => {
-    // Navigate to calendar page with the event's date selected
     setSelectedDate(new Date(event.startAt));
     setSelectedEvent(event);
     setIsEventPanelOpen(true);
@@ -114,7 +117,7 @@ export function UpcomingEventsBlock({
     markEventDone(eventId);
   };
 
-  const handleCreateToday = () => {
+  const handleCreateEvent = () => {
     setQuickCreateDate(new Date());
     setIsQuickCreateOpen(true);
   };
@@ -132,71 +135,73 @@ export function UpcomingEventsBlock({
               variant="ghost" 
               size="sm" 
               className="gap-1"
-              onClick={handleCreateToday}
+              onClick={handleCreateEvent}
             >
               <Plus className="h-4 w-4" />
-              Hoy
+              Nuevo
             </Button>
           )}
         </div>
         
-        {/* Quick Filters - Compact layout */}
-        <ToggleGroup 
-          type="single" 
-          value={activeFilter}
-          onValueChange={(value) => value && setActiveFilter(value as EventFilter)}
-          className="justify-start flex-wrap gap-1"
-        >
-          <ToggleGroupItem 
-            value="all" 
-            size="sm" 
-            className="text-xs gap-1 h-6 px-2"
+        {/* Quick Filters - 2 column grid */}
+        <div className="grid grid-cols-2 gap-1 mt-2">
+          <ToggleGroup 
+            type="single" 
+            value={activeFilter}
+            onValueChange={(value) => value && setActiveFilter(value as EventFilter)}
+            className="contents"
           >
-            Todos
-            <Badge variant="secondary" className="h-4 px-1 text-[10px]">
-              {eventCounts.all}
-            </Badge>
-          </ToggleGroupItem>
-          <ToggleGroupItem 
-            value="user" 
-            size="sm" 
-            className="text-xs gap-1 h-6 px-1.5"
-          >
-            <Calendar className="h-3 w-3" />
-            Propios
-            {eventCounts.user > 0 && (
-              <Badge variant="secondary" className="h-4 px-1 text-[10px]">
-                {eventCounts.user}
+            <ToggleGroupItem 
+              value="all" 
+              size="sm" 
+              className="text-xs gap-1 h-7 px-2 justify-start"
+            >
+              Todos
+              <Badge variant="secondary" className="h-4 px-1 text-[10px] ml-auto">
+                {eventCounts.all}
               </Badge>
-            )}
-          </ToggleGroupItem>
-          <ToggleGroupItem 
-            value="book_events" 
-            size="sm" 
-            className="text-xs gap-1 h-6 px-1.5"
-          >
-            <BookOpen className="h-3 w-3 text-purple-500" />
-            Libros
-            {eventCounts.book_events > 0 && (
-              <Badge variant="secondary" className="h-4 px-1 text-[10px] bg-purple-500/20">
-                {eventCounts.book_events}
-              </Badge>
-            )}
-          </ToggleGroupItem>
-          <ToggleGroupItem 
-            value="system" 
-            size="sm" 
-            className="text-xs gap-1 h-6 px-1.5"
-          >
-            <Sparkles className="h-3 w-3" />
-            Sistema
-            {eventCounts.system > 0 && (
-              <Badge variant="secondary" className="h-4 px-1 text-[10px]">
-                {eventCounts.system}
-              </Badge>
-            )}
-          </ToggleGroupItem>
-        </ToggleGroup>
+            </ToggleGroupItem>
+            <ToggleGroupItem 
+              value="user" 
+              size="sm" 
+              className="text-xs gap-1 h-7 px-2 justify-start"
+            >
+              <Calendar className="h-3 w-3 shrink-0" />
+              Propios
+              {eventCounts.user > 0 && (
+                <Badge variant="secondary" className="h-4 px-1 text-[10px] ml-auto">
+                  {eventCounts.user}
+                </Badge>
+              )}
+            </ToggleGroupItem>
+            <ToggleGroupItem 
+              value="book_events" 
+              size="sm" 
+              className="text-xs gap-1 h-7 px-2 justify-start"
+            >
+              <BookOpen className="h-3 w-3 text-purple-500 shrink-0" />
+              Libros
+              {eventCounts.book_events > 0 && (
+                <Badge variant="secondary" className="h-4 px-1 text-[10px] bg-purple-500/20 ml-auto">
+                  {eventCounts.book_events}
+                </Badge>
+              )}
+            </ToggleGroupItem>
+            <ToggleGroupItem 
+              value="system" 
+              size="sm" 
+              className="text-xs gap-1 h-7 px-2 justify-start"
+            >
+              <Sparkles className="h-3 w-3 shrink-0" />
+              Sistema
+              {eventCounts.system > 0 && (
+                <Badge variant="secondary" className="h-4 px-1 text-[10px] ml-auto">
+                  {eventCounts.system}
+                </Badge>
+              )}
+            </ToggleGroupItem>
+          </ToggleGroup>
+        </div>
       </CardHeader>
       <CardContent className="flex-1 overflow-hidden pt-2">
         <ScrollArea className="h-full pr-2">
@@ -224,7 +229,7 @@ export function UpcomingEventsBlock({
                   variant="outline" 
                   size="sm" 
                   className="mt-3 gap-2"
-                  onClick={handleCreateToday}
+                  onClick={handleCreateEvent}
                 >
                   <Plus className="h-4 w-4" />
                   Crear evento
@@ -253,29 +258,28 @@ export function UpcomingEventsBlock({
                         : 'border-border/50'
                     )}
                   >
-                    <div className="flex items-start justify-between gap-2">
+                    <div className="flex items-start gap-2">
                       <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2">
+                        <div className="flex items-center gap-2 flex-wrap">
                           {getSourceIcon(event.origin)}
-                          <p className="font-medium text-sm truncate">{event.title}</p>
+                          <p className="font-medium text-sm truncate max-w-[180px]">{event.title}</p>
                           {eventIsToday && (
                             <Badge 
                               variant="default" 
-                              className="h-4 px-1.5 text-[10px] bg-primary text-primary-foreground animate-pulse"
+                              className="h-4 px-1.5 text-[10px] bg-primary text-primary-foreground animate-pulse shrink-0"
                             >
                               Hoy
                             </Badge>
                           )}
-                          <ChevronRight className="h-3 w-3 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity" />
                         </div>
-                        <p className="text-xs text-muted-foreground mt-0.5">
+                        <p className="text-xs text-muted-foreground mt-1">
                           {format(event.startAt, "EEEE, d 'de' MMMM", { locale: es })}
                           {!event.allDay && ` • ${format(event.startAt, 'HH:mm')}`}
                         </p>
                         
-                        {/* Tags */}
+                        {/* Tags - max 2 */}
                         {event.tags.length > 0 && (
-                          <div className="flex gap-1 mt-2 flex-wrap">
+                          <div className="flex gap-1 mt-1.5 flex-wrap">
                             {event.tags.slice(0, 2).map(tag => (
                               <Badge
                                 key={tag.id}
@@ -302,7 +306,7 @@ export function UpcomingEventsBlock({
                         )}
                       </div>
 
-                      <div className="flex flex-col items-end gap-1">
+                      <div className="flex flex-col items-end gap-1 shrink-0">
                         <Badge 
                           variant="outline" 
                           className={cn('text-[10px] px-1.5 py-0', statusConfig.bgClass)}
@@ -326,6 +330,7 @@ export function UpcomingEventsBlock({
                             </Button>
                           )}
                         </div>
+                        <ChevronRight className="h-3 w-3 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity" />
                       </div>
                     </div>
                   </button>
