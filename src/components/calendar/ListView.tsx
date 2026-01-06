@@ -1,4 +1,4 @@
-import { useState, useMemo, useCallback } from 'react';
+import { useState, useMemo, useCallback, useEffect } from 'react';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
@@ -73,7 +73,7 @@ interface ListViewProps {
   filters: CalendarFilters;
 }
 
-const ITEMS_PER_PAGE = 20;
+const ITEMS_PER_PAGE = 10;
 
 // Column order storage key
 const COLUMN_ORDER_KEY = 'publify-list-column-order';
@@ -87,6 +87,16 @@ export function ListView({ filters }: ListViewProps) {
   const [sortState, setSortState] = useState<SortState>({ column: 'startAt', direction: 'asc' });
   const [currentPage, setCurrentPage] = useState(1);
   const [selectedEvents, setSelectedEvents] = useState<Set<string>>(new Set());
+  
+  // Reset page when filters, search or sort change
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [filters, searchQuery, sortState]);
+  
+  // Clear selection when changing page
+  useEffect(() => {
+    setSelectedEvents(new Set());
+  }, [currentPage]);
   
   // Column ordering with localStorage persistence
   const [columns, setColumns] = useState<ListViewColumn[]>(() => {

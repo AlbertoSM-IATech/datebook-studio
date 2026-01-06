@@ -233,6 +233,9 @@ export function EditorialCalendarModule(props: EditorialCalendarModuleProps) {
   );
 }
 
+// Export CalendarContent for use with external CalendarProvider
+export { CalendarContent };
+
 // Legacy export for backwards compatibility
 export function EditorialCalendar() {
   return <EditorialCalendarModule mode="page" />;

@@ -179,48 +179,51 @@ function DayPanel({ date, events, onClose, onEventClick, onCreateEvent, onViewMo
   );
 }
 
-// Day cell component with proper forwardRef
-const DayCell = forwardRef<
-  HTMLButtonElement,
-  {
-    day: Date;
-    isCurrentMonth: boolean;
-    isTodayDate: boolean;
-    density: 'none' | 'low' | 'medium' | 'high';
-    isSystem: boolean;
-    isSelected: boolean;
-    events: EditorialEvent[];
-    onClick: () => void;
+// Day cell component with proper forwardRef - accepts extra button props for tooltip
+type DayCellProps = {
+  day: Date;
+  isCurrentMonth: boolean;
+  isTodayDate: boolean;
+  density: 'none' | 'low' | 'medium' | 'high';
+  isSystem: boolean;
+  isSelected: boolean;
+  events: EditorialEvent[];
+  onClick: () => void;
+} & Omit<React.ComponentPropsWithoutRef<'button'>, 'onClick'>;
+
+const DayCell = forwardRef<HTMLButtonElement, DayCellProps>(
+  ({ day, isCurrentMonth, isTodayDate, density, isSystem, isSelected, events, onClick, className, ...rest }, ref) => {
+    return (
+      <button
+        ref={ref}
+        type="button"
+        onClick={(e) => {
+          e.stopPropagation();
+          onClick();
+        }}
+        disabled={!isCurrentMonth}
+        className={cn(
+          'aspect-square flex items-center justify-center rounded-sm transition-colors text-[10px]',
+          'focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-1',
+          !isCurrentMonth && 'opacity-20 cursor-default',
+          isCurrentMonth && 'cursor-pointer hover:bg-primary/30',
+          isTodayDate && 'bg-primary text-primary-foreground font-bold',
+          !isTodayDate && density === 'low' && 'bg-primary/20',
+          !isTodayDate && density === 'medium' && 'bg-primary/40',
+          !isTodayDate && density === 'high' && 'bg-primary/60',
+          isSystem && !isTodayDate && 'ring-1 ring-accent',
+          isSelected && 'ring-2 ring-primary',
+          className
+        )}
+        aria-label={`${format(day, "d 'de' MMMM", { locale: es })}${events.length > 0 ? `, ${events.length} eventos` : ''}`}
+        aria-describedby={events.length > 0 ? `tooltip-${day.toISOString()}` : undefined}
+        {...rest}
+      >
+        {format(day, 'd')}
+      </button>
+    );
   }
->(({ day, isCurrentMonth, isTodayDate, density, isSystem, isSelected, events, onClick }, ref) => {
-  return (
-    <button
-      ref={ref}
-      type="button"
-      onClick={(e) => {
-        e.stopPropagation();
-        onClick();
-      }}
-      disabled={!isCurrentMonth}
-      className={cn(
-        'aspect-square flex items-center justify-center rounded-sm transition-colors text-[10px]',
-        'focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-1',
-        !isCurrentMonth && 'opacity-20 cursor-default',
-        isCurrentMonth && 'cursor-pointer hover:bg-primary/30',
-        isTodayDate && 'bg-primary text-primary-foreground font-bold',
-        !isTodayDate && density === 'low' && 'bg-primary/20',
-        !isTodayDate && density === 'medium' && 'bg-primary/40',
-        !isTodayDate && density === 'high' && 'bg-primary/60',
-        isSystem && !isTodayDate && 'ring-1 ring-accent',
-        isSelected && 'ring-2 ring-primary'
-      )}
-      aria-label={`${format(day, "d 'de' MMMM", { locale: es })}${events.length > 0 ? `, ${events.length} eventos` : ''}`}
-      aria-describedby={events.length > 0 ? `tooltip-${day.toISOString()}` : undefined}
-    >
-      {format(day, 'd')}
-    </button>
-  );
-});
+);
 DayCell.displayName = 'DayCell';
 
 export const YearlyView = forwardRef<HTMLDivElement, YearlyViewProps>(

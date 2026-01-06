@@ -26,7 +26,7 @@ import { useCalendarContext } from '@/contexts/CalendarContext';
 import { STATUS_CONFIG, PRIORITY_CONFIG, EditorialEvent, EventOrigin } from '@/types/calendar';
 
 const FILTER_STORAGE_KEY = 'publify-upcoming-events-filter';
-const MAX_UPCOMING_EVENTS = 7;
+const MAX_UPCOMING_EVENTS = 5;
 
 const PriorityIcon = {
   low: ArrowDown,

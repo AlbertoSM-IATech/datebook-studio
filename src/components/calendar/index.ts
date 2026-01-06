@@ -1,4 +1,4 @@
-export { EditorialCalendar, EditorialCalendarModule } from './EditorialCalendar';
+export { EditorialCalendar, EditorialCalendarModule, CalendarContent } from './EditorialCalendar';
 export { CalendarWidget } from './CalendarWidget';
 export { MonthlyView } from './MonthlyView';
 export { YearlyView } from './YearlyView';
