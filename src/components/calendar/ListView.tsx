@@ -768,34 +768,35 @@ export function ListView({ filters }: ListViewProps) {
         </div>
       </div>
 
-      {/* Pagination */}
-      {totalPages > 1 && (
-        <div className="flex items-center justify-between">
-          <span className="text-sm text-muted-foreground">
-            Página {currentPage} de {totalPages}
-          </span>
-          <div className="flex items-center gap-2">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
-              disabled={currentPage === 1}
-              aria-label="Página anterior"
-            >
-              <ChevronLeft className="h-4 w-4" />
-            </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
-              disabled={currentPage === totalPages}
-              aria-label="Página siguiente"
-            >
-              <ChevronRight className="h-4 w-4" />
-            </Button>
-          </div>
+      {/* Pagination - Always visible */}
+      <div className="flex items-center justify-between py-2 border-t">
+        <span className="text-sm text-muted-foreground">
+          Mostrando {paginatedEvents.length} de {filteredEvents.length} eventos
+          {totalPages > 1 && ` • Página ${currentPage} de ${totalPages}`}
+        </span>
+        <div className="flex items-center gap-2">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+            disabled={currentPage === 1}
+            aria-label="Página anterior"
+          >
+            <ChevronLeft className="h-4 w-4" />
+            <span className="hidden sm:inline ml-1">Anterior</span>
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+            disabled={currentPage >= totalPages}
+            aria-label="Página siguiente"
+          >
+            <span className="hidden sm:inline mr-1">Siguiente</span>
+            <ChevronRight className="h-4 w-4" />
+          </Button>
         </div>
-      )}
+      </div>
     </div>
   );
 }
