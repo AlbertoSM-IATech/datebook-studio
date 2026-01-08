@@ -26,7 +26,7 @@ import { useCalendarContext } from '@/contexts/CalendarContext';
 import { STATUS_CONFIG, PRIORITY_CONFIG, EditorialEvent, EventOrigin } from '@/types/calendar';
 
 const FILTER_STORAGE_KEY = 'publify-upcoming-events-filter';
-const MAX_UPCOMING_EVENTS = 5;
+// No limit - show all events with scroll
 
 const PriorityIcon = {
   low: ArrowDown,
@@ -77,30 +77,23 @@ export function UpcomingEventsBlock({
     return events.filter(e => startOfDay(e.startAt) >= today);
   }, [getUpcomingEvents]);
 
-  // Filter events based on selected filter
+  // Filter events based on selected filter - no limit, show all
   const filteredEvents = useMemo(() => {
-    let filtered = upcomingEvents;
-    
     switch (activeFilter) {
       case 'system':
-        filtered = upcomingEvents.filter(e => e.type === 'system');
-        break;
+        return upcomingEvents.filter(e => e.type === 'system');
       case 'user':
-        filtered = upcomingEvents.filter(e => e.type === 'user' && e.origin === 'local');
-        break;
+        return upcomingEvents.filter(e => e.type === 'user' && e.origin === 'local');
       case 'book_events':
-        filtered = upcomingEvents.filter(e => e.origin === 'book_events');
-        break;
+        return upcomingEvents.filter(e => e.origin === 'book_events');
       default:
-        break;
+        return upcomingEvents;
     }
-    
-    return filtered.slice(0, MAX_UPCOMING_EVENTS);
   }, [upcomingEvents, activeFilter]);
 
   // Count events by type for badges
   const eventCounts = useMemo(() => ({
-    all: Math.min(upcomingEvents.length, MAX_UPCOMING_EVENTS),
+    all: upcomingEvents.length,
     system: upcomingEvents.filter(e => e.type === 'system').length,
     user: upcomingEvents.filter(e => e.type === 'user' && e.origin === 'local').length,
     book_events: upcomingEvents.filter(e => e.origin === 'book_events').length,
