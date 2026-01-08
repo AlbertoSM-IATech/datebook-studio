@@ -197,17 +197,13 @@ function CalendarContent({ mode = 'page', initialView = 'month' }: EditorialCale
 
       {/* Calendar View - Flexible height based on content */}
       <div className={cn(
-        'flex-1 min-h-0',
-        // For list view, use internal scroll but don't cut off pagination
-        viewMode === 'list' && isEmbedded && 'max-h-[600px]',
+        'flex-1',
+        // For list view in embedded mode, set explicit height for scrolling
+        viewMode === 'list' && isEmbedded && 'h-[550px]',
       )}>
         {viewMode === 'month' && <MonthlyView filters={filtersWithSearch} legacyStyle={isEmbedded} />}
         {viewMode === 'year' && <YearlyView filters={filtersWithSearch} />}
-        {viewMode === 'list' && (
-          <div className="h-full flex flex-col">
-            <ListView filters={filtersWithSearch} />
-          </div>
-        )}
+        {viewMode === 'list' && <ListView filters={filtersWithSearch} />}
       </div>
 
       {/* Event Panel */}

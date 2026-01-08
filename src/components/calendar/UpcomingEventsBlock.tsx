@@ -116,7 +116,7 @@ export function UpcomingEventsBlock({
   };
 
   return (
-    <Card className={cn('card-hover flex flex-col h-[400px]', className)}>
+    <Card className={cn('card-hover flex flex-col overflow-hidden', className)}>
       <CardHeader className="pb-2 flex-shrink-0">
         <div className="flex items-center justify-between">
           <CardTitle className="font-heading text-lg flex items-center gap-2">
@@ -196,8 +196,8 @@ export function UpcomingEventsBlock({
           </ToggleGroup>
         </div>
       </CardHeader>
-      <CardContent className="flex-1 min-h-0 overflow-hidden pt-2">
-        <ScrollArea className="h-full"  type="always">
+      <CardContent className="flex-1 min-h-0 pt-2 pb-4">
+        <ScrollArea className="h-full pr-3">
           {filteredEvents.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-8 text-center">
               <Calendar className="h-12 w-12 text-muted-foreground/30 mb-3" />
