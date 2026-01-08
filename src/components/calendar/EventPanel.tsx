@@ -2,7 +2,8 @@ import { useState, useEffect, useCallback } from 'react';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
-import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetClose } from '@/components/ui/sheet';
+import { Maximize2, Minimize2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -57,6 +58,7 @@ export function EventPanel() {
 
   const [localEvent, setLocalEvent] = useState<EditorialEvent | null>(null);
   const [newChecklistItem, setNewChecklistItem] = useState('');
+  const [isExpanded, setIsExpanded] = useState(false);
 
   // Sync local state with selected event
   useEffect(() => {
@@ -199,7 +201,21 @@ export function EventPanel() {
 
   return (
     <Sheet open={isEventPanelOpen} onOpenChange={setIsEventPanelOpen}>
-      <SheetContent className="w-full sm:max-w-2xl overflow-y-auto">
+      <SheetContent className={cn(
+        "w-full overflow-y-auto transition-all duration-300",
+        isExpanded ? "sm:max-w-4xl" : "sm:max-w-2xl"
+      )}>
+        <div className="absolute right-12 top-4 z-10">
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => setIsExpanded(!isExpanded)}
+            className="h-8 w-8"
+            title={isExpanded ? "Contraer panel" : "Expandir panel"}
+          >
+            {isExpanded ? <Minimize2 className="h-4 w-4" /> : <Maximize2 className="h-4 w-4" />}
+          </Button>
+        </div>
         <SheetHeader className="space-y-4">
           {/* Type Badge & Actions */}
           <div className="flex items-center justify-between">
