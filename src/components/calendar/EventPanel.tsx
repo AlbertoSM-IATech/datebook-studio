@@ -199,7 +199,7 @@ export function EventPanel() {
 
   return (
     <Sheet open={isEventPanelOpen} onOpenChange={setIsEventPanelOpen}>
-      <SheetContent className="w-full sm:max-w-lg overflow-y-auto">
+      <SheetContent className="w-full sm:max-w-2xl overflow-y-auto">
         <SheetHeader className="space-y-4">
           {/* Type Badge & Actions */}
           <div className="flex items-center justify-between">

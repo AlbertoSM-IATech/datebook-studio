@@ -73,7 +73,8 @@ interface ListViewProps {
   filters: CalendarFilters;
 }
 
-const ITEMS_PER_PAGE = 10;
+const PAGE_SIZE_OPTIONS = [5, 10, 20] as const;
+const DEFAULT_PAGE_SIZE = 10;
 
 // Column order storage key
 const COLUMN_ORDER_KEY = 'publify-list-column-order';
@@ -86,6 +87,7 @@ export function ListView({ filters }: ListViewProps) {
   const [searchQuery, setSearchQuery] = useState('');
   const [sortState, setSortState] = useState<SortState>({ column: 'startAt', direction: 'asc' });
   const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage, setItemsPerPage] = useState(DEFAULT_PAGE_SIZE);
   const [selectedEvents, setSelectedEvents] = useState<Set<string>>(new Set());
   
   // Reset page when filters, search or sort change
@@ -188,10 +190,10 @@ export function ListView({ filters }: ListViewProps) {
   }, [events, filters, searchQuery, sortState, filterEvents]);
 
   // Pagination
-  const totalPages = Math.ceil(filteredEvents.length / ITEMS_PER_PAGE);
+  const totalPages = Math.ceil(filteredEvents.length / itemsPerPage);
   const paginatedEvents = filteredEvents.slice(
-    (currentPage - 1) * ITEMS_PER_PAGE,
-    currentPage * ITEMS_PER_PAGE
+    (currentPage - 1) * itemsPerPage,
+    currentPage * itemsPerPage
   );
 
   const handleSort = (column: string) => {
@@ -770,10 +772,31 @@ export function ListView({ filters }: ListViewProps) {
 
       {/* Pagination - Always visible */}
       <div className="flex items-center justify-between py-2 border-t">
-        <span className="text-sm text-muted-foreground">
-          Mostrando {paginatedEvents.length} de {filteredEvents.length} eventos
-          {totalPages > 1 && ` • Página ${currentPage} de ${totalPages}`}
-        </span>
+        <div className="flex items-center gap-4">
+          <span className="text-sm text-muted-foreground">
+            Mostrando {paginatedEvents.length} de {filteredEvents.length} eventos
+            {totalPages > 1 && ` • Página ${currentPage} de ${totalPages}`}
+          </span>
+          <div className="flex items-center gap-2">
+            <span className="text-sm text-muted-foreground">Filas:</span>
+            <Select 
+              value={String(itemsPerPage)} 
+              onValueChange={(v) => {
+                setItemsPerPage(Number(v));
+                setCurrentPage(1);
+              }}
+            >
+              <SelectTrigger className="h-8 w-[70px]">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {PAGE_SIZE_OPTIONS.map(size => (
+                  <SelectItem key={size} value={String(size)}>{size}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+        </div>
         <div className="flex items-center gap-2">
           <Button
             variant="outline"
