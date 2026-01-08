@@ -604,7 +604,7 @@ export function ListView({ filters }: ListViewProps) {
   };
 
   return (
-    <div className="flex flex-col h-full space-y-4">
+    <div className="flex flex-col h-full gap-4">
       {/* Toolbar */}
       <div className="flex items-center justify-between gap-4 flex-wrap">
         <div className="flex items-center gap-2 flex-1 min-w-[200px] max-w-md">
@@ -650,8 +650,8 @@ export function ListView({ filters }: ListViewProps) {
       </div>
 
       {/* Table with horizontal scroll */}
-      <div className="flex-1 border rounded-lg overflow-hidden">
-        <div className="overflow-x-auto h-full">
+      <div className="flex-1 min-h-0 border rounded-lg overflow-hidden flex flex-col">
+        <div className="flex-1 overflow-auto">
           <Table className="min-w-[900px]">
             <TableHeader className="sticky top-0 bg-card z-10">
               <TableRow>

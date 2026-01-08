@@ -59,7 +59,7 @@ const Index = () => {
             <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
               {/* Left Column - Full Calendar Module (3 cols) */}
               <div className="lg:col-span-3">
-                <Card className="overflow-visible">
+                <Card className="overflow-visible" id="calendar-card">
                   <CardHeader className="pb-2">
                     <CardTitle className="font-heading text-xl flex items-center gap-2">
                       <Calendar className="h-5 w-5 text-primary" />
@@ -76,14 +76,14 @@ const Index = () => {
               </div>
 
               {/* Right Column - Stats & Upcoming Events (1 col) */}
-              <div className="flex flex-col gap-6">
+              <div className="flex flex-col gap-6 lg:max-h-[calc(100vh-200px)]">
                 {/* Events This Month Card */}
                 <EventsThisMonthCard />
 
-                {/* Upcoming Events Block - Expands to fill remaining space */}
+                {/* Upcoming Events Block - Fixed height matching calendar with internal scroll */}
                 <UpcomingEventsBlock 
                   showActions={true} 
-                  className="flex-1 min-h-[400px]"
+                  className="flex-1 min-h-0 max-h-[500px]"
                 />
               </div>
             </div>
