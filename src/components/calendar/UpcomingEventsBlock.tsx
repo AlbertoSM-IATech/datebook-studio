@@ -255,7 +255,7 @@ export function UpcomingEventsBlock({
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2 flex-wrap">
                           {getSourceIcon(event.origin)}
-                          <p className="font-medium text-sm truncate max-w-[180px]">{event.title}</p>
+                          <p className="font-medium text-sm leading-tight">{event.title}</p>
                           {eventIsToday && (
                             <Badge 
                               variant="default" 
