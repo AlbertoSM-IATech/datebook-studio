@@ -317,10 +317,10 @@ export function MonthlyView({ filters, legacyStyle = false }: MonthlyViewProps) 
             ))}
           </div>
 
-          {/* Days Grid - Rectangular cells for event titles */}
+          {/* Days Grid - Square cells */}
           <div 
             className="grid grid-cols-7 gap-1 flex-1"
-            style={{ gridTemplateRows: `repeat(${numWeeks}, minmax(80px, 1fr))` }}
+            style={{ gridTemplateRows: `repeat(${numWeeks}, 1fr)` }}
           >
             {days.map((day) => {
               const dayEvents = filterEvents(getEventsForDay(day), filters);
@@ -334,7 +334,7 @@ export function MonthlyView({ filters, legacyStyle = false }: MonthlyViewProps) 
                 <div
                   key={day.toISOString()}
                   className={cn(
-                    'relative p-1.5 rounded-md border transition-all cursor-pointer flex flex-col min-h-[80px]',
+                    'relative aspect-square p-1.5 rounded-md border transition-all cursor-pointer flex flex-col',
                     'bg-muted/40 border-border/30 hover:bg-muted/60 hover:border-border/50',
                     !isCurrentMonth && 'opacity-30',
                     isSelected && 'ring-2 ring-primary border-primary bg-primary/10',
