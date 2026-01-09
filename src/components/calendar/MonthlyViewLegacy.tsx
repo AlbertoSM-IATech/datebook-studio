@@ -18,7 +18,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from '@/components/ui/sheet';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
-import { ChevronLeft, ChevronRight, Calendar as CalendarIcon, Plus, Cloud, BookOpen } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Calendar as CalendarIcon, Plus, Cloud, BookOpen, GripVertical } from 'lucide-react';
 import { useCalendarContext } from '@/contexts/CalendarContext';
 import { useEvents } from '@/hooks/useEvents';
 import { useBooks } from '@/hooks/useBooks';
@@ -317,10 +317,10 @@ export function MonthlyView({ filters, legacyStyle = false }: MonthlyViewProps) 
             ))}
           </div>
 
-          {/* Days Grid - Square cells with aspect-ratio */}
+          {/* Days Grid - Rectangular cells for event titles */}
           <div 
             className="grid grid-cols-7 gap-1 flex-1"
-            style={{ gridTemplateRows: `repeat(${numWeeks}, 1fr)` }}
+            style={{ gridTemplateRows: `repeat(${numWeeks}, minmax(80px, 1fr))` }}
           >
             {days.map((day) => {
               const dayEvents = filterEvents(getEventsForDay(day), filters);
@@ -329,23 +329,17 @@ export function MonthlyView({ filters, legacyStyle = false }: MonthlyViewProps) 
               const isSelected = isSameDay(day, selectedDate);
               const isTodayDate = isToday(day);
               const isDragOver = dragOverDay && isSameDay(day, dragOverDay);
-              const sources = getSourceIndicators(dayEvents);
 
-              // Tooltip content for events preview
-              const tooltipEvents = dayEvents.slice(0, 6);
-              const hasMore = eventCount > 6;
-
-              const dayCell = (
+              return (
                 <div
                   key={day.toISOString()}
                   className={cn(
-                    'relative aspect-square p-1.5 rounded-md border transition-all cursor-pointer',
-                    // Legacy dark card style
+                    'relative p-1.5 rounded-md border transition-all cursor-pointer flex flex-col min-h-[80px]',
                     'bg-muted/40 border-border/30 hover:bg-muted/60 hover:border-border/50',
                     !isCurrentMonth && 'opacity-30',
                     isSelected && 'ring-2 ring-primary border-primary bg-primary/10',
                     isTodayDate && 'bg-primary/20 border-primary/50',
-                    isDragOver && 'bg-accent/30 border-accent border-2 scale-[1.02]'
+                    isDragOver && 'bg-accent/30 border-accent border-2 scale-[1.02] ring-2 ring-accent/50'
                   )}
                   onClick={() => handleDayClick(day)}
                   onDragOver={(e) => handleDragOver(e, day)}
@@ -361,100 +355,83 @@ export function MonthlyView({ filters, legacyStyle = false }: MonthlyViewProps) 
                   }}
                 >
                   {/* Day Number */}
-                  <div className="flex items-center justify-between">
+                  <div className="flex items-center justify-between mb-1">
                     <span
                       className={cn(
-                        'text-sm font-medium leading-none',
-                        isTodayDate && 'bg-primary text-primary-foreground rounded-full w-6 h-6 flex items-center justify-center text-xs',
+                        'text-xs font-medium leading-none',
+                        isTodayDate && 'bg-primary text-primary-foreground rounded-full w-5 h-5 flex items-center justify-center text-[10px]',
                         !isTodayDate && !isCurrentMonth && 'text-muted-foreground/50'
                       )}
                     >
                       {format(day, 'd')}
                     </span>
+                    {eventCount > 2 && (
+                      <span className="text-[9px] text-muted-foreground">+{eventCount - 2}</span>
+                    )}
                   </div>
 
-                  {/* Event Indicator - DOTS per event (max 6 + "+X") */}
-                  {eventCount > 0 && (
-                    <div className="absolute bottom-1 left-1 right-1 flex items-center gap-0.5 flex-wrap">
-                      {dayEvents.slice(0, 6).map((event, idx) => {
-                        // Color based on origin - PURPLE for book_events
-                        let dotColor = 'bg-primary';
-                        if (event.origin === 'book_events') {
-                          dotColor = 'bg-purple-500'; // FIXED PURPLE
-                        } else if (event.type === 'system') {
-                          dotColor = 'bg-accent';
-                        } else if (event.origin === 'google') {
-                          dotColor = 'bg-blue-500';
-                        }
-                        
-                        return (
-                          <div
-                            key={`${event.id}-${idx}`}
-                            className={cn('w-2 h-2 rounded-full', dotColor)}
-                          />
-                        );
-                      })}
-                      {eventCount > 6 && (
-                        <span className="text-[9px] text-muted-foreground ml-0.5">+{eventCount - 6}</span>
-                      )}
-                    </div>
-                  )}
+                  {/* Event chips with titles - max 2 visible */}
+                  <div className="flex-1 space-y-0.5 overflow-hidden">
+                    {dayEvents.slice(0, 2).map((event) => {
+                      // Color based on origin
+                      let bgColor = 'bg-primary/20 border-primary/40 text-primary';
+                      if (event.origin === 'book_events') {
+                        bgColor = 'bg-purple-500/20 border-purple-500/40 text-purple-300';
+                      } else if (event.type === 'system') {
+                        bgColor = 'bg-accent/20 border-accent/40 text-accent';
+                      } else if (event.origin === 'google') {
+                        bgColor = 'bg-blue-500/20 border-blue-500/40 text-blue-300';
+                      }
+                      
+                      const isDraggable = event.type !== 'system';
+                      const isBeingDragged = draggedEvent?.id === event.id;
+                      
+                      return (
+                        <div
+                          key={event.id}
+                          draggable={isDraggable}
+                          onDragStart={(e) => {
+                            e.stopPropagation();
+                            handleDragStart(e, event);
+                          }}
+                          onDragEnd={handleDragEnd}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleEventClick(event);
+                          }}
+                          className={cn(
+                            'group flex items-center gap-1 px-1 py-0.5 rounded border text-[10px] truncate transition-all',
+                            bgColor,
+                            isDraggable && 'cursor-grab active:cursor-grabbing hover:scale-[1.02]',
+                            isBeingDragged && 'opacity-50 scale-95 ring-2 ring-primary'
+                          )}
+                        >
+                          {isDraggable && (
+                            <GripVertical className="h-2.5 w-2.5 opacity-0 group-hover:opacity-60 shrink-0 transition-opacity" />
+                          )}
+                          <span className="truncate">{event.title}</span>
+                        </div>
+                      );
+                    })}
+                  </div>
                 </div>
               );
-
-              // Wrap with tooltip if there are events
-              if (eventCount > 0) {
-                return (
-                  <Tooltip key={day.toISOString()}>
-                    <TooltipTrigger asChild>
-                      {dayCell}
-                    </TooltipTrigger>
-                    <TooltipContent 
-                      side="top" 
-                      className="max-w-[220px] p-2 animate-scale-in"
-                      sideOffset={5}
-                    >
-                      <div className="space-y-1.5">
-                        <p className="text-xs font-medium border-b border-border/50 pb-1 capitalize">
-                          {format(day, "EEEE d", { locale: es })}
-                        </p>
-                        {tooltipEvents.map((event) => {
-                          const statusConfig = STATUS_CONFIG[event.status];
-                          return (
-                            <div key={event.id} className="flex items-center gap-2 text-xs">
-                              <div
-                                className={cn(
-                                  'w-2 h-2 rounded-full flex-shrink-0',
-                                  event.origin === 'book_events' && 'bg-purple-500',
-                                  event.type === 'system' && event.origin !== 'book_events' && 'bg-accent',
-                                  event.origin === 'local' && 'bg-primary',
-                                  event.origin === 'google' && 'bg-blue-500'
-                                )}
-                              />
-                              <span className="truncate flex-1">{event.title}</span>
-                              {!event.allDay && (
-                                <span className="text-muted-foreground text-[10px]">
-                                  {format(event.startAt, 'HH:mm')}
-                                </span>
-                              )}
-                            </div>
-                          );
-                        })}
-                        {hasMore && (
-                          <p className="text-[10px] text-muted-foreground pt-0.5">
-                            +{eventCount - 6} más...
-                          </p>
-                        )}
-                      </div>
-                    </TooltipContent>
-                  </Tooltip>
-                );
-              }
-
-              return dayCell;
             })}
           </div>
         </div>
+
+        {/* Enhanced Drag indicator */}
+        {draggedEvent && (
+          <div className="fixed bottom-4 left-1/2 -translate-x-1/2 bg-card border-2 border-primary/50 rounded-lg px-4 py-3 shadow-xl z-50 animate-fade-in flex items-center gap-3">
+            <div className="w-8 h-8 rounded-full bg-primary/20 flex items-center justify-center">
+              <GripVertical className="h-4 w-4 text-primary animate-pulse" />
+            </div>
+            <div>
+              <p className="text-sm font-medium text-foreground">{draggedEvent.title}</p>
+              <p className="text-xs text-muted-foreground">Suelta en el día destino</p>
+            </div>
+          </div>
+        )}
 
         {/* Day Events Sheet */}
         <DayEventsSheet
@@ -464,15 +441,6 @@ export function MonthlyView({ filters, legacyStyle = false }: MonthlyViewProps) 
           onEventClick={handleEventClick}
           onCreateEvent={handleCreateEvent}
         />
-
-        {/* Drag indicator */}
-        {draggedEvent && (
-          <div className="fixed bottom-4 left-1/2 -translate-x-1/2 bg-card border border-border rounded-lg px-4 py-2 shadow-lg z-50 animate-fade-in">
-            <p className="text-sm text-muted-foreground">
-              Arrastra <span className="font-medium text-foreground">{draggedEvent.title}</span> a otro día
-            </p>
-          </div>
-        )}
       </div>
     );
   }
