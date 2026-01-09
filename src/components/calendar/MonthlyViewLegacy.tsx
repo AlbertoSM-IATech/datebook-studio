@@ -1,4 +1,5 @@
 import { useState, useMemo, useCallback } from 'react';
+import { toast } from '@/hooks/use-toast';
 import {
   format,
   startOfMonth,
@@ -252,6 +253,10 @@ export function MonthlyView({ filters, legacyStyle = false }: MonthlyViewProps) 
     e.preventDefault();
     if (draggedEvent && draggedEvent.type !== 'system') {
       moveEvent(draggedEvent.id, day);
+      toast({
+        title: "Evento movido",
+        description: `"${draggedEvent.title}" movido al ${format(day, "d 'de' MMMM", { locale: es })}`,
+      });
     }
     setDraggedEvent(null);
     setDragOverDay(null);
@@ -373,14 +378,14 @@ export function MonthlyView({ filters, legacyStyle = false }: MonthlyViewProps) 
                   {/* Event chips with titles - max 2 visible */}
                   <div className="flex-1 space-y-0.5 overflow-hidden">
                     {dayEvents.slice(0, 2).map((event) => {
-                      // Color based on origin
-                      let bgColor = 'bg-primary/20 border-primary/40 text-primary';
+                      // Color based on origin - white text for better readability
+                      let bgColor = 'bg-primary border-primary/60 text-white';
                       if (event.origin === 'book_events') {
-                        bgColor = 'bg-purple-500/20 border-purple-500/40 text-purple-300';
+                        bgColor = 'bg-purple-500 border-purple-400 text-white';
                       } else if (event.type === 'system') {
-                        bgColor = 'bg-accent/20 border-accent/40 text-accent';
+                        bgColor = 'bg-accent border-accent/60 text-white';
                       } else if (event.origin === 'google') {
-                        bgColor = 'bg-blue-500/20 border-blue-500/40 text-blue-300';
+                        bgColor = 'bg-blue-500 border-blue-400 text-white';
                       }
                       
                       const isDraggable = event.type !== 'system';
