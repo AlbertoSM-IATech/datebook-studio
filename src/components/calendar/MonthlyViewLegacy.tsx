@@ -1,5 +1,6 @@
 import { useState, useMemo, useCallback } from 'react';
 import { toast } from '@/hooks/use-toast';
+import { ToastAction } from '@/components/ui/toast';
 import {
   format,
   startOfMonth,
@@ -261,9 +262,8 @@ export function MonthlyView({ filters, legacyStyle = false }: MonthlyViewProps) 
         title: "Evento movido",
         description: `"${eventTitle}" movido al ${format(day, "d 'de' MMMM", { locale: es })}`,
         action: (
-          <Button 
-            variant="outline" 
-            size="sm" 
+          <ToastAction 
+            altText="Deshacer movimiento"
             onClick={() => {
               moveEvent(eventId, originalDate);
               toast({
@@ -273,7 +273,7 @@ export function MonthlyView({ filters, legacyStyle = false }: MonthlyViewProps) 
             }}
           >
             Deshacer
-          </Button>
+          </ToastAction>
         ),
       });
     }
