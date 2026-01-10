@@ -446,11 +446,14 @@ export function MonthlyView({ filters, legacyStyle = false }: MonthlyViewProps) 
                               <span className="truncate">{event.title}</span>
                             </div>
                           </TooltipTrigger>
-                          {showLockIcon && (
-                            <TooltipContent side="top" className="text-xs">
-                              {isBookEvent ? 'Evento de libro - no movible' : 'Evento del sistema - no movible'}
-                            </TooltipContent>
-                          )}
+                          <TooltipContent side="top" className="text-xs max-w-[200px]">
+                            <div className="font-medium">{event.title}</div>
+                            {showLockIcon && (
+                              <div className="text-muted-foreground mt-0.5">
+                                {isBookEvent ? '📚 Evento de libro - no movible' : '🔒 Evento del sistema - no movible'}
+                              </div>
+                            )}
+                          </TooltipContent>
                         </Tooltip>
                       );
                     })}
