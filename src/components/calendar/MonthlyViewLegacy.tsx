@@ -251,11 +251,30 @@ export function MonthlyView({ filters, legacyStyle = false }: MonthlyViewProps) 
 
   const handleDrop = useCallback((e: React.DragEvent, day: Date) => {
     e.preventDefault();
-    if (draggedEvent && draggedEvent.type !== 'system') {
-      moveEvent(draggedEvent.id, day);
+    if (draggedEvent && draggedEvent.type !== 'system' && draggedEvent.origin !== 'book_events') {
+      const originalDate = new Date(draggedEvent.startAt);
+      const eventId = draggedEvent.id;
+      const eventTitle = draggedEvent.title;
+      
+      moveEvent(eventId, day);
       toast({
         title: "Evento movido",
-        description: `"${draggedEvent.title}" movido al ${format(day, "d 'de' MMMM", { locale: es })}`,
+        description: `"${eventTitle}" movido al ${format(day, "d 'de' MMMM", { locale: es })}`,
+        action: (
+          <Button 
+            variant="outline" 
+            size="sm" 
+            onClick={() => {
+              moveEvent(eventId, originalDate);
+              toast({
+                title: "Movimiento deshecho",
+                description: `"${eventTitle}" restaurado al ${format(originalDate, "d 'de' MMMM", { locale: es })}`,
+              });
+            }}
+          >
+            Deshacer
+          </Button>
+        ),
       });
     }
     setDraggedEvent(null);
@@ -388,7 +407,7 @@ export function MonthlyView({ filters, legacyStyle = false }: MonthlyViewProps) 
                         bgColor = 'bg-blue-500 border-blue-400 text-white';
                       }
                       
-                      const isDraggable = event.type !== 'system';
+                      const isDraggable = event.type !== 'system' && event.origin !== 'book_events';
                       const isBeingDragged = draggedEvent?.id === event.id;
                       
                       return (
