@@ -83,7 +83,7 @@ const Index = () => {
                 {/* Upcoming Events Block - Fixed height matching calendar with internal scroll */}
                 <UpcomingEventsBlock 
                   showActions={true} 
-                  className="flex-1 min-h-0 max-h-[900px]"
+                  className="flex-1 min-h-0 max-h-[1200px]"
                 />
               </div>
             </div>

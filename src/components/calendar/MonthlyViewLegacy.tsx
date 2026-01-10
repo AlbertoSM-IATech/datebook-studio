@@ -20,7 +20,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from '@/components/ui/sheet';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
-import { ChevronLeft, ChevronRight, Calendar as CalendarIcon, Plus, Cloud, BookOpen, GripVertical } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Calendar as CalendarIcon, Plus, Cloud, BookOpen, GripVertical, Lock } from 'lucide-react';
 import { useCalendarContext } from '@/contexts/CalendarContext';
 import { useEvents } from '@/hooks/useEvents';
 import { useBooks } from '@/hooks/useBooks';
@@ -258,13 +258,16 @@ export function MonthlyView({ filters, legacyStyle = false }: MonthlyViewProps) 
       const eventTitle = draggedEvent.title;
       
       moveEvent(eventId, day);
+      console.log('Toast with action triggered for event:', eventTitle);
       toast({
         title: "Evento movido",
         description: `"${eventTitle}" movido al ${format(day, "d 'de' MMMM", { locale: es })}`,
+        duration: 5000,
         action: (
           <ToastAction 
             altText="Deshacer movimiento"
             onClick={() => {
+              console.log('Undo clicked for event:', eventTitle);
               moveEvent(eventId, originalDate);
               toast({
                 title: "Movimiento deshecho",
@@ -410,31 +413,45 @@ export function MonthlyView({ filters, legacyStyle = false }: MonthlyViewProps) 
                       const isDraggable = event.type !== 'system' && event.origin !== 'book_events';
                       const isBeingDragged = draggedEvent?.id === event.id;
                       
+                      const isBookEvent = event.origin === 'book_events';
+                      const isSystemEvent = event.type === 'system';
+                      const showLockIcon = isBookEvent || isSystemEvent;
+                      
                       return (
-                        <div
-                          key={event.id}
-                          draggable={isDraggable}
-                          onDragStart={(e) => {
-                            e.stopPropagation();
-                            handleDragStart(e, event);
-                          }}
-                          onDragEnd={handleDragEnd}
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleEventClick(event);
-                          }}
-                          className={cn(
-                            'group flex items-center gap-1 px-1 py-0.5 rounded border text-[10px] truncate transition-all',
-                            bgColor,
-                            isDraggable && 'cursor-grab active:cursor-grabbing hover:scale-[1.02]',
-                            isBeingDragged && 'opacity-50 scale-95 ring-2 ring-primary'
+                        <Tooltip key={event.id}>
+                          <TooltipTrigger asChild>
+                            <div
+                              draggable={isDraggable}
+                              onDragStart={(e) => {
+                                e.stopPropagation();
+                                handleDragStart(e, event);
+                              }}
+                              onDragEnd={handleDragEnd}
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleEventClick(event);
+                              }}
+                              className={cn(
+                                'group flex items-center gap-1 px-1 py-0.5 rounded border text-[10px] truncate transition-all',
+                                bgColor,
+                                isDraggable && 'cursor-grab active:cursor-grabbing hover:scale-[1.02]',
+                                isBeingDragged && 'opacity-50 scale-95 ring-2 ring-primary'
+                              )}
+                            >
+                              {isDraggable ? (
+                                <GripVertical className="h-2.5 w-2.5 opacity-0 group-hover:opacity-60 shrink-0 transition-opacity" />
+                              ) : showLockIcon && (
+                                <Lock className="h-2.5 w-2.5 opacity-60 shrink-0" />
+                              )}
+                              <span className="truncate">{event.title}</span>
+                            </div>
+                          </TooltipTrigger>
+                          {showLockIcon && (
+                            <TooltipContent side="top" className="text-xs">
+                              {isBookEvent ? 'Evento de libro - no movible' : 'Evento del sistema - no movible'}
+                            </TooltipContent>
                           )}
-                        >
-                          {isDraggable && (
-                            <GripVertical className="h-2.5 w-2.5 opacity-0 group-hover:opacity-60 shrink-0 transition-opacity" />
-                          )}
-                          <span className="truncate">{event.title}</span>
-                        </div>
+                        </Tooltip>
                       );
                     })}
                   </div>
