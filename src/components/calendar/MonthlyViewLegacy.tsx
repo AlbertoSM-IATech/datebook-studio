@@ -1,6 +1,5 @@
 import { useState, useMemo, useCallback } from 'react';
-import { toast } from '@/hooks/use-toast';
-import { ToastAction } from '@/components/ui/toast';
+import { toast } from 'sonner';
 import {
   format,
   startOfMonth,
@@ -258,26 +257,15 @@ export function MonthlyView({ filters, legacyStyle = false }: MonthlyViewProps) 
       const eventTitle = draggedEvent.title;
       
       moveEvent(eventId, day);
-      console.log('Toast with action triggered for event:', eventTitle);
-      toast({
-        title: "Evento movido",
-        description: `"${eventTitle}" movido al ${format(day, "d 'de' MMMM", { locale: es })}`,
+      toast.success(`"${eventTitle}" movido al ${format(day, "d 'de' MMMM", { locale: es })}`, {
+        action: {
+          label: 'Deshacer',
+          onClick: () => {
+            moveEvent(eventId, originalDate);
+            toast.info(`"${eventTitle}" restaurado al ${format(originalDate, "d 'de' MMMM", { locale: es })}`);
+          },
+        },
         duration: 5000,
-        action: (
-          <ToastAction 
-            altText="Deshacer movimiento"
-            onClick={() => {
-              console.log('Undo clicked for event:', eventTitle);
-              moveEvent(eventId, originalDate);
-              toast({
-                title: "Movimiento deshecho",
-                description: `"${eventTitle}" restaurado al ${format(originalDate, "d 'de' MMMM", { locale: es })}`,
-              });
-            }}
-          >
-            Deshacer
-          </ToastAction>
-        ),
       });
     }
     setDraggedEvent(null);
