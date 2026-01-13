@@ -251,11 +251,11 @@ export function UpcomingEventsBlock({
                         : 'border-border/50'
                     )}
                   >
-                    <div className="flex items-start gap-2">
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2 flex-wrap">
-                          {getSourceIcon(event.origin)}
-                          <p className="font-medium text-sm leading-tight">{event.title}</p>
+                    <div className="flex items-start gap-2 min-w-0">
+                      <div className="flex-1 min-w-0 overflow-hidden">
+                        <div className="flex items-center gap-1.5 min-w-0">
+                          <span className="shrink-0">{getSourceIcon(event.origin)}</span>
+                          <p className="font-medium text-sm leading-tight truncate">{event.title}</p>
                           {eventIsToday && (
                             <Badge 
                               variant="default" 
@@ -265,8 +265,8 @@ export function UpcomingEventsBlock({
                             </Badge>
                           )}
                         </div>
-                        <p className="text-xs text-muted-foreground mt-1">
-                          {format(event.startAt, "EEEE, d 'de' MMMM", { locale: es })}
+                        <p className="text-xs text-muted-foreground mt-1 truncate">
+                          {format(event.startAt, "EEE, d MMM", { locale: es })}
                           {!event.allDay && ` • ${format(event.startAt, 'HH:mm')}`}
                         </p>
                         
@@ -277,14 +277,14 @@ export function UpcomingEventsBlock({
                               <Badge
                                 key={tag.id}
                                 variant="outline"
-                                className="text-[10px] px-1.5 py-0"
+                                className="text-[10px] px-1.5 py-0 truncate max-w-[60px]"
                                 style={{ borderColor: tag.color, color: tag.color }}
                               >
                                 {tag.name}
                               </Badge>
                             ))}
                             {event.tags.length > 2 && (
-                              <Badge variant="outline" className="text-[10px] px-1.5 py-0">
+                              <Badge variant="outline" className="text-[10px] px-1.5 py-0 shrink-0">
                                 +{event.tags.length - 2}
                               </Badge>
                             )}
@@ -294,7 +294,7 @@ export function UpcomingEventsBlock({
                         {/* Books */}
                         {books.length > 0 && (
                           <p className="text-[10px] text-muted-foreground mt-1 truncate">
-                            📚 {books.map(b => b.title).join(', ')}
+                            📚 {books.length === 1 ? books[0].title : `${books.length} libros`}
                           </p>
                         )}
                       </div>
