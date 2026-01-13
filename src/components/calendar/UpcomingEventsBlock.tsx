@@ -116,7 +116,7 @@ export function UpcomingEventsBlock({
   };
 
   return (
-    <Card className={cn('card-hover flex flex-col overflow-hidden', className)}>
+    <Card className={cn('card-hover flex flex-col overflow-hidden min-w-0', className)}>
       <CardHeader className="pb-2 flex-shrink-0">
         <div className="flex items-center justify-between">
           <CardTitle className="font-heading text-lg flex items-center gap-2">
@@ -243,7 +243,7 @@ export function UpcomingEventsBlock({
                     key={event.id}
                     onClick={() => handleOpenEvent(event)}
                     className={cn(
-                      'w-full text-left p-3 rounded-lg border transition-all group',
+                      'w-full text-left p-2.5 rounded-lg border transition-all group min-w-0 overflow-hidden',
                       'hover:border-primary/50 hover:bg-primary/5 focus:outline-none focus:ring-2 focus:ring-primary',
                       event.type === 'system' ? 'event-system' : 'event-user',
                       eventIsToday 
@@ -251,7 +251,7 @@ export function UpcomingEventsBlock({
                         : 'border-border/50'
                     )}
                   >
-                    <div className="flex flex-col gap-1.5 min-w-0">
+                    <div className="flex flex-col gap-1 min-w-0 overflow-hidden">
                       {/* Title row - full width */}
                       <div className="flex items-center gap-1.5 min-w-0">
                         <span className="shrink-0">{getSourceIcon(event.origin)}</span>
