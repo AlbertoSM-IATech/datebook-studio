@@ -76,14 +76,14 @@ const Index = () => {
               </div>
 
               {/* Right Column - Stats & Upcoming Events (1 col) */}
-              <div className="flex flex-col gap-6 lg:max-h-[calc(100vh-200px)]">
+              <div className="flex flex-col gap-6 lg:max-h-[calc(100vh-200px)] min-w-0 overflow-hidden">
                 {/* Events This Month Card */}
                 <EventsThisMonthCard />
 
                 {/* Upcoming Events Block - Fixed height matching calendar with internal scroll */}
                 <UpcomingEventsBlock 
                   showActions={true} 
-                  className="flex-1 min-h-0 max-h-[1200px]"
+                  className="flex-1 min-h-0 max-h-[1200px] min-w-0"
                 />
               </div>
             </div>
