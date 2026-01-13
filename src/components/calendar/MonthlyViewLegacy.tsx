@@ -388,14 +388,14 @@ export function MonthlyView({ filters, legacyStyle = false }: MonthlyViewProps) 
                   {/* Event chips with titles - max 2 visible */}
                   <div className="flex-1 space-y-0.5 overflow-hidden">
                     {dayEvents.slice(0, 2).map((event) => {
-                      // Color based on origin - with 50% transparency and white text
-                      let bgColor = 'bg-primary/50 text-white';
+                      // Color based on origin - with 30% transparency and white text
+                      let bgColor = 'bg-primary/30 text-white';
                       if (event.origin === 'book_events') {
-                        bgColor = 'bg-purple-500/50 text-white';
+                        bgColor = 'bg-purple-500/30 text-white';
                       } else if (event.type === 'system') {
-                        bgColor = 'bg-accent/50 text-white';
+                        bgColor = 'bg-accent/30 text-white';
                       } else if (event.origin === 'google') {
-                        bgColor = 'bg-blue-500/50 text-white';
+                        bgColor = 'bg-blue-500/30 text-white';
                       }
                       
                       const isDraggable = event.type !== 'system' && event.origin !== 'book_events';
