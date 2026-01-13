@@ -251,80 +251,79 @@ export function UpcomingEventsBlock({
                         : 'border-border/50'
                     )}
                   >
-                    <div className="flex items-start gap-2 min-w-0">
-                      <div className="flex-1 min-w-0 overflow-hidden">
-                        <div className="flex items-center gap-1.5 min-w-0">
-                          <span className="shrink-0">{getSourceIcon(event.origin)}</span>
-                          <p className="font-medium text-sm leading-tight truncate">{event.title}</p>
-                          {eventIsToday && (
-                            <Badge 
-                              variant="default" 
-                              className="h-4 px-1.5 text-[10px] bg-primary text-primary-foreground animate-pulse shrink-0"
-                            >
-                              Hoy
-                            </Badge>
-                          )}
-                        </div>
-                        <p className="text-xs text-muted-foreground mt-1 truncate">
+                    <div className="flex flex-col gap-1.5 min-w-0">
+                      {/* Title row - full width */}
+                      <div className="flex items-center gap-1.5 min-w-0">
+                        <span className="shrink-0">{getSourceIcon(event.origin)}</span>
+                        <p className="font-medium text-sm leading-tight truncate flex-1 min-w-0">{event.title}</p>
+                        {eventIsToday && (
+                          <Badge 
+                            variant="default" 
+                            className="h-4 px-1.5 text-[10px] bg-primary text-primary-foreground animate-pulse shrink-0"
+                          >
+                            Hoy
+                          </Badge>
+                        )}
+                      </div>
+                      
+                      {/* Date and status row */}
+                      <div className="flex items-center justify-between gap-2">
+                        <p className="text-xs text-muted-foreground truncate">
                           {format(event.startAt, "EEE, d MMM", { locale: es })}
                           {!event.allDay && ` • ${format(event.startAt, 'HH:mm')}`}
                         </p>
-                        
-                        {/* Tags - max 2 */}
-                        {event.tags.length > 0 && (
-                          <div className="flex gap-1 mt-1.5 flex-wrap">
-                            {event.tags.slice(0, 2).map(tag => (
-                              <Badge
-                                key={tag.id}
-                                variant="outline"
-                                className="text-[10px] px-1.5 py-0 truncate max-w-[60px]"
-                                style={{ borderColor: tag.color, color: tag.color }}
-                              >
-                                {tag.name}
-                              </Badge>
-                            ))}
-                            {event.tags.length > 2 && (
-                              <Badge variant="outline" className="text-[10px] px-1.5 py-0 shrink-0">
-                                +{event.tags.length - 2}
-                              </Badge>
-                            )}
-                          </div>
-                        )}
-
-                        {/* Books */}
-                        {books.length > 0 && (
-                          <p className="text-[10px] text-muted-foreground mt-1 truncate">
-                            📚 {books.length === 1 ? books[0].title : `${books.length} libros`}
-                          </p>
-                        )}
-                      </div>
-
-                      <div className="flex flex-col items-end gap-1 shrink-0">
-                        <Badge 
-                          variant="outline" 
-                          className={cn('text-[10px] px-1.5 py-0', statusConfig.bgClass)}
-                        >
-                          {statusConfig.label}
-                        </Badge>
-                        <div className="flex items-center gap-1">
+                        <div className="flex items-center gap-1.5 shrink-0">
+                          <Badge 
+                            variant="outline" 
+                            className={cn('text-[10px] px-1.5 py-0', statusConfig.bgClass)}
+                          >
+                            {statusConfig.label}
+                          </Badge>
                           <Icon 
-                            className="h-3.5 w-3.5" 
+                            className="h-3 w-3" 
                             style={{ color: priorityConfig.color }}
                           />
                           {showActions && event.status !== 'done' && event.type === 'user' && (
                             <Button
                               variant="ghost"
                               size="icon"
-                              className="h-6 w-6 opacity-0 group-hover:opacity-100 transition-opacity"
+                              className="h-5 w-5 opacity-0 group-hover:opacity-100 transition-opacity"
                               onClick={(e) => handleMarkDone(event.id, e)}
                               aria-label="Marcar como hecho"
                             >
-                              <CheckCircle className="h-3.5 w-3.5 text-green-500" />
+                              <CheckCircle className="h-3 w-3 text-green-500" />
                             </Button>
                           )}
                         </div>
-                        <ChevronRight className="h-3 w-3 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity" />
                       </div>
+                      
+                      {/* Tags row */}
+                      {event.tags.length > 0 && (
+                        <div className="flex gap-1 flex-wrap">
+                          {event.tags.slice(0, 3).map(tag => (
+                            <Badge
+                              key={tag.id}
+                              variant="outline"
+                              className="text-[10px] px-1.5 py-0"
+                              style={{ borderColor: tag.color, color: tag.color }}
+                            >
+                              {tag.name}
+                            </Badge>
+                          ))}
+                          {event.tags.length > 3 && (
+                            <Badge variant="outline" className="text-[10px] px-1.5 py-0">
+                              +{event.tags.length - 3}
+                            </Badge>
+                          )}
+                        </div>
+                      )}
+
+                      {/* Books row */}
+                      {books.length > 0 && (
+                        <p className="text-[10px] text-muted-foreground truncate">
+                          📚 {books.length === 1 ? books[0].title : `${books.length} libros`}
+                        </p>
+                      )}
                     </div>
                   </button>
                 );
