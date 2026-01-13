@@ -388,14 +388,14 @@ export function MonthlyView({ filters, legacyStyle = false }: MonthlyViewProps) 
                   {/* Event chips with titles - max 2 visible */}
                   <div className="flex-1 space-y-0.5 overflow-hidden">
                     {dayEvents.slice(0, 2).map((event) => {
-                      // Color based on origin - white text for better readability
-                      let bgColor = 'bg-primary border-primary/60 text-white';
+                      // Color based on origin - with transparency and white text
+                      let bgColor = 'bg-primary/70 text-white';
                       if (event.origin === 'book_events') {
-                        bgColor = 'bg-purple-500 border-purple-400 text-white';
+                        bgColor = 'bg-purple-500/70 text-white';
                       } else if (event.type === 'system') {
-                        bgColor = 'bg-accent border-accent/60 text-white';
+                        bgColor = 'bg-accent/70 text-white';
                       } else if (event.origin === 'google') {
-                        bgColor = 'bg-blue-500 border-blue-400 text-white';
+                        bgColor = 'bg-blue-500/70 text-white';
                       }
                       
                       const isDraggable = event.type !== 'system' && event.origin !== 'book_events';
@@ -420,7 +420,7 @@ export function MonthlyView({ filters, legacyStyle = false }: MonthlyViewProps) 
                                 handleEventClick(event);
                               }}
                               className={cn(
-                                'group flex items-center gap-1 px-1 py-0.5 rounded border text-[10px] truncate transition-all',
+                                'group flex items-center gap-1 px-1 py-0.5 rounded text-[10px] truncate transition-all',
                                 bgColor,
                                 isDraggable && 'cursor-grab active:cursor-grabbing hover:scale-[1.02]',
                                 isBeingDragged && 'opacity-50 scale-95 ring-2 ring-primary'
