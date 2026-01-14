@@ -126,7 +126,7 @@ export type CalendarViewMode = 'month' | 'year' | 'list';
 // Calendar Module Mode
 export type CalendarModuleMode = 'embedded' | 'page';
 
-// Filter State - Unified with showBookEventsEvents
+// Filter State - Unified with showBookEventsEvents and KDP filters
 export interface CalendarFilters {
   showSystemEvents: boolean;
   showUserEvents: boolean;
@@ -141,6 +141,9 @@ export interface CalendarFilters {
   dateRange?: { from: Date; to: Date };
   origin: EventOrigin[];
   searchQuery: string;
+  // KDP-specific filters
+  campaignTypes: CampaignType[];
+  recommendedNiches: string[];
 }
 
 // Quick Filter Chip
@@ -267,6 +270,13 @@ export const PRIORITY_CONFIG: Record<EventPriority, { label: string; color: stri
   urgent: { label: 'Urgente', color: 'hsl(var(--priority-urgent))', icon: 'AlertTriangle', bgClass: 'badge-priority-urgent' },
 };
 
+// Campaign Type configuration - KDP specific
+export const CAMPAIGN_TYPE_CONFIG: Record<CampaignType, { label: string; color: string; bgClass: string }> = {
+  comercial: { label: 'Comercial', color: 'hsl(24 94% 59%)', bgClass: 'bg-orange-500/20 text-orange-400 border-orange-500/50' },
+  estacional: { label: 'Estacional', color: 'hsl(262 83% 58%)', bgClass: 'bg-purple-500/20 text-purple-400 border-purple-500/50' },
+  visibilidad: { label: 'Visibilidad', color: 'hsl(217 91% 60%)', bgClass: 'bg-blue-500/20 text-blue-400 border-blue-500/50' },
+};
+
 // Marketplace configuration
 export const MARKETPLACE_CONFIG: Record<Marketplace, { label: string; flag: string }> = {
   ES: { label: 'España', flag: '🇪🇸' },
@@ -350,7 +360,7 @@ export interface BookKanbanItem {
   tags?: Tag[];
 }
 
-// Default filters - Unified with showBookEventsEvents
+// Default filters - Unified with showBookEventsEvents and KDP filters
 export const DEFAULT_FILTERS: CalendarFilters = {
   showSystemEvents: true,
   showUserEvents: true,
@@ -364,6 +374,9 @@ export const DEFAULT_FILTERS: CalendarFilters = {
   assignedTo: [],
   origin: [],
   searchQuery: '',
+  // KDP-specific filters
+  campaignTypes: [],
+  recommendedNiches: [],
 };
 
 // Default list columns
