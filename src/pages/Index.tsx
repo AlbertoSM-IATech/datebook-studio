@@ -5,9 +5,8 @@ import { Calendar } from 'lucide-react';
 import { useEvents } from '@/hooks/useEvents';
 import { startOfMonth, endOfMonth } from 'date-fns';
 import { CalendarProvider } from '@/contexts/CalendarContext';
-import { EventsProvider } from '@/contexts/EventsContext';
 
-// Stats component that uses events context
+// Stats component that uses events context (provided by App.tsx)
 function EventsThisMonthCard() {
   const { events } = useEvents();
   const today = new Date();
@@ -52,43 +51,41 @@ const Index = () => {
           <p className="text-muted-foreground">Tu centro de control editorial. Orden, foco y control.</p>
         </div>
 
-        {/* EventsProvider must wrap everything that uses useEvents */}
-        <EventsProvider>
-          <CalendarProvider>
-            {/* Dashboard Grid */}
-            <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
-              {/* Left Column - Full Calendar Module (3 cols) */}
-              <div className="lg:col-span-3">
-                <Card className="overflow-visible" id="calendar-card">
-                  <CardHeader className="pb-2">
-                    <CardTitle className="font-heading text-xl flex items-center gap-2">
-                      <Calendar className="h-5 w-5 text-primary" />
-                      Calendario Editorial
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent className="p-4">
-                    {/* Dynamic height container - adapts to content, no clipping */}
-                    <div className="w-full">
-                      <CalendarContent mode="embedded" initialView="month" />
-                    </div>
-                  </CardContent>
-                </Card>
-              </div>
-
-              {/* Right Column - Stats & Upcoming Events (1 col) */}
-              <div className="flex flex-col gap-6 lg:max-h-[calc(100vh-200px)] min-w-0 overflow-hidden">
-                {/* Events This Month Card */}
-                <EventsThisMonthCard />
-
-                {/* Upcoming Events Block - Fixed height matching calendar with internal scroll */}
-                <UpcomingEventsBlock 
-                  showActions={true} 
-                  className="flex-1 min-h-0 max-h-[1200px] min-w-0"
-                />
-              </div>
+        {/* CalendarProvider only - EventsProvider is in App.tsx */}
+        <CalendarProvider>
+          {/* Dashboard Grid */}
+          <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
+            {/* Left Column - Full Calendar Module (3 cols) */}
+            <div className="lg:col-span-3">
+              <Card className="overflow-visible" id="calendar-card">
+                <CardHeader className="pb-2">
+                  <CardTitle className="font-heading text-xl flex items-center gap-2">
+                    <Calendar className="h-5 w-5 text-primary" />
+                    Calendario Editorial
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="p-4">
+                  {/* Dynamic height container - adapts to content, no clipping */}
+                  <div className="w-full">
+                    <CalendarContent mode="embedded" initialView="month" />
+                  </div>
+                </CardContent>
+              </Card>
             </div>
-          </CalendarProvider>
-        </EventsProvider>
+
+            {/* Right Column - Stats & Upcoming Events (1 col) */}
+            <div className="flex flex-col gap-6 lg:max-h-[calc(100vh-200px)] min-w-0 overflow-hidden">
+              {/* Events This Month Card */}
+              <EventsThisMonthCard />
+
+              {/* Upcoming Events Block - Fixed height matching calendar with internal scroll */}
+              <UpcomingEventsBlock 
+                showActions={true} 
+                className="flex-1 min-h-0 max-h-[1200px] min-w-0"
+              />
+            </div>
+          </div>
+        </CalendarProvider>
       </main>
     </div>
   );
