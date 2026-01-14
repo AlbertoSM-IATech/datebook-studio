@@ -20,8 +20,15 @@ import {
 } from 'date-fns';
 import { toast } from 'sonner';
 
+// Extended EditorialEvent type for system events with KDP-specific fields
+interface SystemEditorialEvent extends EditorialEvent {
+  campaignType?: 'comercial' | 'estacional' | 'visibilidad';
+  recommendedNiches?: string[];
+  campaignWindowDays?: number;
+}
+
 // Generate system events for a given year
-function generateSystemEventsForYear(year: number): EditorialEvent[] {
+function generateSystemEventsForYear(year: number): SystemEditorialEvent[] {
   return SYSTEM_EVENTS
     .filter(template => template.enabled)
     .map(template => {
@@ -43,7 +50,7 @@ function generateSystemEventsForYear(year: number): EditorialEvent[] {
         systemKey: template.key,
         title: template.name,
         status: 'pending' as const,
-        priority: 'medium' as const,
+        priority: template.priorityLevel, // Use template's priority level
         startAt: startOfDay(eventDate),
         endAt: endOfDay(eventDate),
         allDay: true,
@@ -54,11 +61,15 @@ function generateSystemEventsForYear(year: number): EditorialEvent[] {
         reminders: template.defaultReminders,
         origin: 'local' as const,
         sourceType: 'calendar' as const,
+        // KDP-specific strategic fields
+        campaignType: template.campaignType,
+        recommendedNiches: template.recommendedNiches,
+        campaignWindowDays: template.campaignWindowDays,
         createdAt: new Date(),
         updatedAt: new Date(),
-      } as EditorialEvent;
+      } as SystemEditorialEvent;
     })
-    .filter((event): event is EditorialEvent => event !== null);
+    .filter((event): event is SystemEditorialEvent => event !== null);
 }
 
 // Generate book events from mock kanban data - UNIFIED as book_events

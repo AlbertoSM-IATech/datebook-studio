@@ -75,6 +75,10 @@ export interface EditorialEvent {
   assignedTo?: string;
   origin: EventOrigin;
   sourceType?: CalendarSourceType;
+  // KDP-specific strategic fields (for system events)
+  campaignType?: CampaignType;
+  recommendedNiches?: string[];
+  campaignWindowDays?: number;
   // Google Calendar sync fields
   googleEventId?: string;
   googleCalendarId?: string;
@@ -94,7 +98,10 @@ export interface EditorialEvent {
   updatedBy?: string;
 }
 
-// System Event Template
+// Campaign Type for KDP publishers
+export type CampaignType = 'comercial' | 'estacional' | 'visibilidad';
+
+// System Event Template - Enhanced for KDP publishers
 export interface SystemEventTemplate {
   key: string;
   name: string;
@@ -106,6 +113,11 @@ export interface SystemEventTemplate {
   defaultTags: Tag[];
   defaultReminders: Reminder[];
   enabled: boolean;
+  // KDP-specific strategic fields
+  priorityLevel: EventPriority;
+  campaignType: CampaignType;
+  recommendedNiches: string[];
+  campaignWindowDays: number;
 }
 
 // Calendar View Mode - Now includes 'list'
