@@ -5,18 +5,21 @@ import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { X, Filter, RotateCcw, Calendar, Cloud, BookOpen } from 'lucide-react';
+import { X, Filter, RotateCcw, Calendar, Cloud, BookOpen, Target, Users } from 'lucide-react';
 import {
   CalendarFilters as FiltersType,
   DEFAULT_TAGS,
   STATUS_CONFIG,
   PRIORITY_CONFIG,
   MARKETPLACE_CONFIG,
+  CAMPAIGN_TYPE_CONFIG,
   EventStatus,
   EventPriority,
   Marketplace,
   DEFAULT_FILTERS,
+  CampaignType,
 } from '@/types/calendar';
+import { RECOMMENDED_NICHES } from '@/data/systemEvents';
 
 interface FilterPanelProps {
   filters: FiltersType;
@@ -70,6 +73,20 @@ export function FilterPanel({ filters, onFiltersChange, onClose }: FilterPanelPr
     onFiltersChange({ ...filters, marketplaces: newMarketplaces });
   };
 
+  const toggleCampaignType = (campaignType: CampaignType) => {
+    const newCampaignTypes = filters.campaignTypes.includes(campaignType)
+      ? filters.campaignTypes.filter(ct => ct !== campaignType)
+      : [...filters.campaignTypes, campaignType];
+    onFiltersChange({ ...filters, campaignTypes: newCampaignTypes });
+  };
+
+  const toggleNiche = (niche: string) => {
+    const newNiches = filters.recommendedNiches.includes(niche)
+      ? filters.recommendedNiches.filter(n => n !== niche)
+      : [...filters.recommendedNiches, niche];
+    onFiltersChange({ ...filters, recommendedNiches: newNiches });
+  };
+
   const clearFilters = () => {
     onFiltersChange(DEFAULT_FILTERS);
   };
@@ -82,10 +99,12 @@ export function FilterPanel({ filters, onFiltersChange, onClose }: FilterPanelPr
     filters.tags.length > 0 ||
     filters.statuses.length > 0 ||
     filters.priorities.length > 0 ||
-    filters.marketplaces.length > 0;
+    filters.marketplaces.length > 0 ||
+    filters.campaignTypes.length > 0 ||
+    filters.recommendedNiches.length > 0;
 
   return (
-    <div className="bg-card border border-border rounded-lg p-4 w-72">
+    <div className="bg-card border border-border rounded-lg p-4 w-80">
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center gap-2">
           <Filter className="h-4 w-4 text-muted-foreground" />
@@ -105,7 +124,7 @@ export function FilterPanel({ filters, onFiltersChange, onClose }: FilterPanelPr
         </div>
       </div>
 
-      <ScrollArea className="h-[450px] pr-3">
+      <ScrollArea className="h-[500px] pr-3">
         <div className="space-y-4">
           {/* Event Sources - UNIFIED: 3 main toggles */}
           <div className="space-y-3">
@@ -163,6 +182,56 @@ export function FilterPanel({ filters, onFiltersChange, onClose }: FilterPanelPr
                   onCheckedChange={toggleGoogleEvents}
                 />
               </div>
+            </div>
+          </div>
+
+          <Separator />
+
+          {/* Campaign Type - KDP specific */}
+          <div className="space-y-3">
+            <Label className="text-xs text-muted-foreground uppercase tracking-wider flex items-center gap-1.5">
+              <Target className="h-3 w-3" />
+              Tipo de campaña
+            </Label>
+            <div className="flex flex-wrap gap-2">
+              {Object.entries(CAMPAIGN_TYPE_CONFIG).map(([key, config]) => (
+                <Badge
+                  key={key}
+                  variant="outline"
+                  className={cn(
+                    'cursor-pointer transition-all text-xs',
+                    filters.campaignTypes.includes(key as CampaignType) && config.bgClass
+                  )}
+                  onClick={() => toggleCampaignType(key as CampaignType)}
+                >
+                  {config.label}
+                </Badge>
+              ))}
+            </div>
+          </div>
+
+          <Separator />
+
+          {/* Recommended Niches - KDP specific */}
+          <div className="space-y-3">
+            <Label className="text-xs text-muted-foreground uppercase tracking-wider flex items-center gap-1.5">
+              <Users className="h-3 w-3" />
+              Nichos recomendados
+            </Label>
+            <div className="flex flex-wrap gap-1.5">
+              {RECOMMENDED_NICHES.slice(0, 12).map((niche) => (
+                <Badge
+                  key={niche}
+                  variant="outline"
+                  className={cn(
+                    'cursor-pointer transition-all text-xs capitalize',
+                    filters.recommendedNiches.includes(niche) && 'bg-primary/20 border-primary text-primary'
+                  )}
+                  onClick={() => toggleNiche(niche)}
+                >
+                  {niche}
+                </Badge>
+              ))}
             </div>
           </div>
 

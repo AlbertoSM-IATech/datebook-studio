@@ -263,6 +263,30 @@ export function EventsProvider({ children }: { children: ReactNode }) {
         if (eventStart < rangeStart || eventStart > rangeEnd) return false;
       }
 
+      // Campaign type filter (KDP-specific, only for system events)
+      if (filters.campaignTypes && filters.campaignTypes.length > 0) {
+        if (event.type === 'system' && event.campaignType) {
+          if (!filters.campaignTypes.includes(event.campaignType)) return false;
+        } else if (event.type !== 'system') {
+          // Non-system events don't have campaignType, so they don't match this filter
+          return false;
+        }
+      }
+
+      // Recommended niches filter (KDP-specific, only for system events)
+      if (filters.recommendedNiches && filters.recommendedNiches.length > 0) {
+        if (event.type === 'system' && event.recommendedNiches) {
+          // Check if any of the event's niches match the filter
+          const hasMatchingNiche = event.recommendedNiches.some(niche => 
+            filters.recommendedNiches.includes(niche) || niche === 'todos'
+          );
+          if (!hasMatchingNiche) return false;
+        } else if (event.type !== 'system') {
+          // Non-system events don't have recommended niches
+          return false;
+        }
+      }
+
       return true;
     });
   }, []);
