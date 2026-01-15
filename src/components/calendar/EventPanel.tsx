@@ -406,9 +406,14 @@ export function EventPanel() {
                 </span>
               )}
               {localEvent.type === 'system' && (
-                <Button variant="outline" size="sm" onClick={handleDuplicate} className="gap-1">
+                <Button 
+                  variant="default" 
+                  size="sm" 
+                  onClick={handleDuplicate} 
+                  className="gap-1.5 bg-blue-600 hover:bg-blue-700 text-white"
+                >
                   <Copy className="h-3 w-3" />
-                  Duplicar
+                  Crear mi versión
                 </Button>
               )}
               {localEvent.type === 'user' && (

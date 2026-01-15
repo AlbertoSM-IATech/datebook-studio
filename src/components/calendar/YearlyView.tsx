@@ -208,10 +208,14 @@ const DayCell = forwardRef<HTMLButtonElement, DayCellProps>(
           !isCurrentMonth && 'opacity-20 cursor-default',
           isCurrentMonth && 'cursor-pointer hover:bg-primary/30',
           isTodayDate && 'bg-primary text-primary-foreground font-bold',
-          !isTodayDate && density === 'low' && 'bg-primary/20',
-          !isTodayDate && density === 'medium' && 'bg-primary/40',
-          !isTodayDate && density === 'high' && 'bg-primary/60',
-          isSystem && !isTodayDate && 'ring-1 ring-accent',
+          // System events: blue tones; User events: primary (orange) tones
+          !isTodayDate && !isSystem && density === 'low' && 'bg-primary/20',
+          !isTodayDate && !isSystem && density === 'medium' && 'bg-primary/40',
+          !isTodayDate && !isSystem && density === 'high' && 'bg-primary/60',
+          !isTodayDate && isSystem && density === 'low' && 'bg-blue-500/20',
+          !isTodayDate && isSystem && density === 'medium' && 'bg-blue-500/40',
+          !isTodayDate && isSystem && density === 'high' && 'bg-blue-500/60',
+          isSystem && !isTodayDate && 'ring-1 ring-blue-400',
           isSelected && 'ring-2 ring-primary',
           className
         )}
