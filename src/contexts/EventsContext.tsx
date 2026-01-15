@@ -476,26 +476,38 @@ export function EventsProvider({ children }: { children: ReactNode }) {
     setTimeout(() => setSaveStatus('idle'), 2000);
   }, []);
 
-  // Duplicate event
+  // Duplicate event (converts system events to user events for customization)
   const duplicateEvent = useCallback((id: string): EditorialEvent | null => {
     const event = allEvents.find(e => e.id === id);
     if (!event) return null;
 
+    // Create a user-owned copy that can be fully customized
     const newEvent: EditorialEvent = {
       ...event,
       id: `evt-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
-      type: 'user',
-      systemKey: undefined,
-      title: `${event.title} (copia)`,
+      type: 'user', // Convert to user event for full editability
+      systemKey: undefined, // Remove system key
+      title: event.type === 'system' 
+        ? `📋 ${event.title}` // Add icon to indicate it's derived from system event
+        : `${event.title} (copia)`,
       origin: 'local',
       sourceType: 'calendar',
       googleEventId: undefined,
+      // Preserve KDP-specific strategic fields for reference
+      campaignType: event.campaignType,
+      recommendedNiches: event.recommendedNiches,
+      campaignWindowDays: event.campaignWindowDays,
+      // User can now modify all fields including these
       createdAt: new Date(),
       updatedAt: new Date(),
     };
 
     setUserEvents(prev => [...prev, newEvent]);
-    toast.success('Evento duplicado');
+    toast.success(
+      event.type === 'system' 
+        ? 'Evento sistema duplicado como evento propio. Ahora puedes personalizarlo y asociar libros.'
+        : 'Evento duplicado'
+    );
     return newEvent;
   }, [allEvents]);
 
